@@ -76,6 +76,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.shadow
 import androidx.compose.material3.ButtonDefaults
+import kotlinx.coroutines.delay
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.ColorFilter
 private const val MIN_INTERVAL_MS = 800L
 
 
@@ -198,20 +201,52 @@ fun HomeScreen(
 ) {
 
     val state by engine.state
+    var breathOffset by remember { mutableStateOf(0f) }
+    var bounceOffset by remember { mutableStateOf(0f) }
+    var isBouncing by remember { mutableStateOf(false) }
 
-    // 🔥 NUEVO: animación (la dejo intacta)
-    val infiniteTransition =
-        rememberInfiniteTransition(label = "dragon_breath")
+    LaunchedEffect(Unit) {
+        while (true) {
 
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1800),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scale"
-    )
+            for (i in 0..10) {
+                breathOffset = i / 200f
+                delay(140)
+            }
+
+            for (i in 10 downTo 0) {
+                breathOffset = i / 200f
+                delay(140)
+            }
+        }
+    }
+    LaunchedEffect(state.happiness) {
+
+        while (true) {
+
+            val intervalSeconds =
+                (37 - state.happiness * 2)
+                    .coerceAtLeast(15)
+
+            delay(intervalSeconds * 1000L)
+
+            isBouncing = true
+
+            // ⬆️ subida (salto)
+            for (i in 0..10) {
+                bounceOffset = i / 10f
+                delay(25)
+            }
+
+            // ⬇️ bajada (caída)
+            for (i in 10 downTo 0) {
+                bounceOffset = i / 10f
+                delay(35) // caída más suave = sensación de peso
+            }
+
+            bounceOffset = 0f
+            isBouncing = false
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -369,14 +404,82 @@ fun HomeScreen(
 
             Spacer(Modifier.height(86.dp))
 
-            Image(
-                painter = painterResource(id = getDragonSprite(state.level)),
-                contentDescription = "Drako",
-                modifier = Modifier.size(220.dp)
-            )
+            Box(
+                modifier = Modifier.size(220.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = getDragonSprite(state.level)),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+
+                            // 📉 siempre en el suelo
+                            translationY = 60f
+
+                            if (isBouncing) {
+                                // 🦘 sombra se comprime al saltar
+                                scaleX = 1f - (bounceOffset * 0.25f)
+                                scaleY = 1f - (bounceOffset * 0.25f)
+                                alpha = 0.15f
+                            } else {
+                                // 🌬️ respiración suave
+                                val scale = 1f + breathOffset * 0.3f
+                                scaleX = scale
+                                scaleY = scale
+                                alpha = 0.2f
+                            }
+                        },
+                    colorFilter = ColorFilter.tint(Color.Black)
+                )
+
+                // 🔥 GLOW (capa de atrás)
+                Image(
+                    painter = painterResource(id = getDragonSprite(state.level)),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+
+                            if (isBouncing) {
+                                translationY = -bounceOffset * 30f
+                                scaleX = 1.25f
+                                scaleY = 1.25f
+                                alpha = 0.5f
+                            }
+
+                        },
+                    colorFilter = ColorFilter.tint(Color(0xFFFF4D00))
+                )
+
+                // 🐉 DRAGÓN PRINCIPAL (capa delante)
+                Image(
+                    painter = painterResource(id = getDragonSprite(state.level)),
+                    contentDescription = "Drako",
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+
+                            if (isBouncing) {
+
+                                translationY = -bounceOffset * 30f
+
+                                val squash = 1f + (bounceOffset * 0.03f)
+                                scaleX = squash
+                                scaleY = squash
+
+                            } else {
+
+                                val scale = 1f + breathOffset
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                        }
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
