@@ -50,6 +50,8 @@ fun MapScreen(
     var isFinishing by remember { mutableStateOf(false) }
     val scale = remember { Animatable(0.6f) }
     val alpha = remember { Animatable(0f) }
+    var lastValidPoint: Point? by remember { mutableStateOf(null) }
+    var invalidGpsStreak by remember { mutableStateOf(0) }
 
     var startTime by remember { mutableStateOf(System.currentTimeMillis()) }
 
@@ -195,12 +197,40 @@ fun MapScreen(
                         loc.longitude,
                         loc.latitude
                     )
+                val lastValid = lastValidPoint
 
-                val last = routePoints.lastOrNull()
+                if (lastValid != null) {
 
-                if (last != null &&
-                    last.latitude() == newPoint.latitude() &&
-                    last.longitude() == newPoint.longitude()
+                    val results = FloatArray(1)
+
+                    android.location.Location.distanceBetween(
+                        lastValid.latitude(),
+                        lastValid.longitude(),
+                        newPoint.latitude(),
+                        newPoint.longitude(),
+                        results
+                    )
+
+                    val distance = results[0]
+
+                    if (distance > 400f) {
+
+                        invalidGpsStreak++
+
+                        if (invalidGpsStreak >= 2) {
+                            isFinishing = true
+                        }
+
+                        return
+                    }
+                }
+
+// 👇 IMPORTANTE: este es OTRO "last", renombrado
+                val lastRoutePoint = routePoints.lastOrNull()
+
+                if (lastRoutePoint != null &&
+                    lastRoutePoint.latitude() == newPoint.latitude() &&
+                    lastRoutePoint.longitude() == newPoint.longitude()
                 ) return
 
                 dragonPosition = newPoint
@@ -217,6 +247,8 @@ fun MapScreen(
                     )
                 }
 
+                invalidGpsStreak = 0
+                lastValidPoint = newPoint
                 routePoints.add(newPoint)
 
                 if (routePoints.size > 1) {
