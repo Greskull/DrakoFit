@@ -69,6 +69,8 @@ import androidx.compose.material3.ButtonDefaults
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ColorFilter
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 private const val MIN_INTERVAL_MS = 800L
 
 
@@ -130,6 +132,7 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             var inActivity by remember { mutableStateOf(false) }
+            val activityContext = this@MainActivity
 
             var lastActivityText by remember { mutableStateOf("") }
             var lastXpText by remember { mutableStateOf("") }
@@ -144,6 +147,9 @@ class MainActivity : ComponentActivity() {
 
                         engine.registerActivity()
 
+                        val intent = Intent(this, TrackingService::class.java)
+                        stopService(intent)
+
                         inActivity = false
                     }
                 )
@@ -155,6 +161,9 @@ class MainActivity : ComponentActivity() {
                     onStartActivity = {
                         requestLocationPermission {
                             inActivity = true
+
+                            val intent = Intent(activityContext, TrackingService::class.java)
+                            ContextCompat.startForegroundService(activityContext, intent)
                         }
                     },
                     lastActivityText = lastActivityText,
