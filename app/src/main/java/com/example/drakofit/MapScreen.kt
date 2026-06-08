@@ -34,6 +34,11 @@ import androidx.compose.animation.core.*
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
 
+enum class FinishReason {
+    NORMAL,
+    GPS_SUSPICIOUS
+}
+
 
 val mapRef = mutableStateOf<MapLibreMap?>(null)
 private var dragonMarker: Marker? = null
@@ -47,7 +52,7 @@ fun MapScreen(
 
     var distanceMeters by remember { mutableStateOf(0f) }
     var lastStepsComputed by remember { mutableStateOf(0) }
-    var isFinishing by remember { mutableStateOf(false) }
+    var finishReason by remember { mutableStateOf<FinishReason?>(null) }
     val scale = remember { Animatable(0.6f) }
     val alpha = remember { Animatable(0f) }
     var lastValidPoint: Point? by remember { mutableStateOf(null) }
@@ -77,10 +82,17 @@ fun MapScreen(
         LocationServices.getFusedLocationProviderClient(context)
     }
 
-    LaunchedEffect(isFinishing) {
-        if (isFinishing) {
-            delay(5000)
-            onFinish(distanceMeters)
+    LaunchedEffect(finishReason) {
+
+        when (finishReason) {
+
+            FinishReason.NORMAL,
+            FinishReason.GPS_SUSPICIOUS -> {
+                delay(5000)
+                onFinish(distanceMeters)
+            }
+
+            null -> return@LaunchedEffect
         }
     }
 
@@ -138,12 +150,6 @@ fun MapScreen(
         val sec = ((pace - min) * 60).toInt()
 
         return "%d:%02d".format(min, sec)
-    }
-    if (isFinishing) {
-        LaunchedEffect(Unit) {
-            delay(5000)
-            onFinish(distanceMeters)
-        }
     }
 
     // 🧭 AUTO CENTER (PAUSE AWARE)
@@ -218,7 +224,7 @@ fun MapScreen(
                         invalidGpsStreak++
 
                         if (invalidGpsStreak >= 2) {
-                            isFinishing = true
+                            finishReason = FinishReason.GPS_SUSPICIOUS
                         }
 
                         return
@@ -543,7 +549,7 @@ fun MapScreen(
                     onClick = {
                         engine.addSteps(sessionSteps)
                         engine.addDistance(km)
-                        isFinishing = true
+                        finishReason = FinishReason.NORMAL
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
@@ -557,7 +563,7 @@ fun MapScreen(
             }
         }
 
-        if (isFinishing) {
+        if (finishReason != null) {
 
             LaunchedEffect(Unit) {
                 alpha.snapTo(0f)
@@ -582,8 +588,14 @@ fun MapScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
+                    val title = when (finishReason) {
+                        FinishReason.NORMAL -> "¡Bien hecho! 🐉"
+                        FinishReason.GPS_SUSPICIOUS -> "Actividad GPS sospechosa ⚠️"
+                        null -> ""
+                    }
+
                     Text(
-                        text = "¡Bien hecho! 🐉",
+                        text = title,
                         color = Color.White,
                         fontSize = 28.sp,
                         modifier = Modifier.scale(scale.value)
