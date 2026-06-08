@@ -11,7 +11,7 @@ class DragonEngine(context: Context) {
     private val storage = DragonStorage(context)
 
     // 🔥 ESTADO ÚNICO
-    private val _state = mutableStateOf<DragonState>(
+    private val _state = mutableStateOf(
         normalizeDailyState(storage.load())
     )
 
@@ -35,7 +35,6 @@ class DragonEngine(context: Context) {
         _state.value = newState
         storage.save(newState)
 
-        // 🔥 FORZAR DISCO INMEDIATO
         android.os.StrictMode.noteSlowCall("Saving DragonState")
     }
 
@@ -75,14 +74,15 @@ class DragonEngine(context: Context) {
             _state.value.copy(
                 totalSteps = _state.value.totalSteps + steps,
                 dailySteps = _state.value.dailySteps + steps,
-                lastActivityDate = today
             )
         )
+
         addWalkingXP(steps)
     }
+
     // ---------------------------------------------------
-// DISTANCIA
-// ---------------------------------------------------
+    // DISTANCIA
+    // ---------------------------------------------------
 
     fun addDistance(km: Float) {
 
@@ -91,18 +91,12 @@ class DragonEngine(context: Context) {
         updateState(
             _state.value.copy(
                 dailyDistanceKm = _state.value.dailyDistanceKm + km,
-                lastActivityDate = today
             )
         )
     }
 
     fun addWalkingXP(steps: Int) {
         val xpGain = steps / 100
-        addXp(xpGain)
-    }
-
-    fun addRunningXP(km: Float) {
-        val xpGain = (km * 50).toInt()
         addXp(xpGain)
     }
 
@@ -114,17 +108,19 @@ class DragonEngine(context: Context) {
 
         val today = LocalDate.now().toString()
 
-        if (!_state.value.activityRegisteredToday) {
+        // 🔥 ya registró actividad hoy → no hacer nada
+        if (_state.value.lastActivityDate == today &&
+            _state.value.activityRegisteredToday
+        ) return
 
-            updateState(
-                _state.value.copy(
-                    streak = _state.value.streak + 1,
-                    happiness = (_state.value.happiness + 1).coerceAtMost(7),
-                    lastActivityDate = today,
-                    activityRegisteredToday = true
-                )
+        updateState(
+            _state.value.copy(
+                streak = _state.value.streak + 1,
+                happiness = (_state.value.happiness + 1).coerceAtMost(7),
+                lastActivityDate = today,
+                activityRegisteredToday = true
             )
-        }
+        )
     }
 
     fun missDay() {
@@ -136,40 +132,45 @@ class DragonEngine(context: Context) {
         )
     }
 
+    // ---------------------------------------------------
+    // DAILY CHECK (FIX PRINCIPAL)
+    // ---------------------------------------------------
+
     fun checkDailyStatus() {
-
-        val today = LocalDate.now().toString()
-
-        val last = _state.value.lastActivityDate
-
-        if (last == today) return
-
-        updateState(
-            _state.value.copy(
-                dailySteps = 0,
-                activityRegisteredToday = false,
-                lastActivityDate = today
-            )
-        )
+        // ya no necesario (evita doble lógica)
     }
 
     // ---------------------------------------------------
-    // NORMALIZACIÓN (ÚNICA FUENTE)
+    // NORMALIZACIÓN (CARGA INICIAL)
     // ---------------------------------------------------
 
     private fun normalizeDailyState(old: DragonState): DragonState {
 
-        val today = LocalDate.now().toString()
+        val todayDate = LocalDate.now()
+        val today = todayDate.toString()
 
-        return if (old.lastActivityDate != today) {
+        val lastActivity = LocalDate.parse(old.lastActivityDate)
+
+        val isNewDay = old.lastDailyCheckDate != today
+
+        val missedDay = lastActivity.isBefore(todayDate.minusDays(1))
+
+        val resetDaily = if (isNewDay) {
             old.copy(
                 dailySteps = 0,
                 dailyDistanceKm = 0f,
                 activityRegisteredToday = false,
-                lastActivityDate = today
+                lastDailyCheckDate = today
+            )
+        } else old
+
+        return if (missedDay) {
+            resetDaily.copy(
+                streak = 0,
+                happiness = (old.happiness - 1).coerceAtLeast(0)
             )
         } else {
-            old
+            resetDaily
         }
     }
 }

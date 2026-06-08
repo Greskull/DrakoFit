@@ -1,6 +1,9 @@
 package com.example.drakofit
 
+import java.time.LocalDate
+
 data class DragonState(
+    val lastDailyCheckDate: String = LocalDate.now().toString(),
     val level: Int = 1,
     val xp: Int = 0,
     val streak: Int = 0,

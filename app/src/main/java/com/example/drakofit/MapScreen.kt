@@ -29,6 +29,10 @@ import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.annotations.Marker
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.runtime.*
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
 
 
 val mapRef = mutableStateOf<MapLibreMap?>(null)
@@ -43,6 +47,9 @@ fun MapScreen(
 
     var distanceMeters by remember { mutableStateOf(0f) }
     var lastStepsComputed by remember { mutableStateOf(0) }
+    var isFinishing by remember { mutableStateOf(false) }
+    val scale = remember { Animatable(0.6f) }
+    val alpha = remember { Animatable(0f) }
 
     var startTime by remember { mutableStateOf(System.currentTimeMillis()) }
 
@@ -66,6 +73,13 @@ fun MapScreen(
 
     val fusedClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    LaunchedEffect(isFinishing) {
+        if (isFinishing) {
+            delay(5000)
+            onFinish(distanceMeters)
+        }
     }
 
     // ⏱ TIMER TICK (UI REFRESH)
@@ -122,6 +136,12 @@ fun MapScreen(
         val sec = ((pace - min) * 60).toInt()
 
         return "%d:%02d".format(min, sec)
+    }
+    if (isFinishing) {
+        LaunchedEffect(Unit) {
+            delay(5000)
+            onFinish(distanceMeters)
+        }
     }
 
     // 🧭 AUTO CENTER (PAUSE AWARE)
@@ -491,7 +511,7 @@ fun MapScreen(
                     onClick = {
                         engine.addSteps(sessionSteps)
                         engine.addDistance(km)
-                        onFinish(distanceMeters / 1000f)
+                        isFinishing = true
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
@@ -501,6 +521,49 @@ fun MapScreen(
                     border = BorderStroke(1.5.dp, Color(0xFFE53935))
                 ) {
                     Text("⏹ Finalizar")
+                }
+            }
+        }
+
+        if (isFinishing) {
+
+            LaunchedEffect(Unit) {
+                alpha.snapTo(0f)
+                scale.snapTo(0.6f)
+
+                alpha.animateTo(1f, tween(300))
+                scale.animateTo(1.15f, tween(250))
+                scale.animateTo(1f, tween(150))
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.15f))
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) awaitPointerEvent()
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                    Text(
+                        text = "¡Bien hecho! 🐉",
+                        color = Color.White,
+                        fontSize = 28.sp,
+                        modifier = Modifier.scale(scale.value)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Actividad finalizada",
+                        color = Color.White.copy(alpha = alpha.value),
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
