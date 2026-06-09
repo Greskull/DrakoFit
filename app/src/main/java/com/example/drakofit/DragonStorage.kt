@@ -60,7 +60,11 @@ class DragonStorage(context: Context) {
             dailySteps = prefs.getInt("dailySteps", 0),
             dailyDistanceKm = prefs.getFloat("dailyDistanceKm", 0f),
 
-            lastActivityDate = prefs.getString("lastActivityDate", "") ?: "",
+            lastActivityDate =
+                prefs.getString(
+                    "lastActivityDate",
+                    LocalDate.now().toString()
+                ) ?: LocalDate.now().toString(),
             activityRegisteredToday = prefs.getBoolean("activityRegisteredToday", false)
         ).also {
 

@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ColorFilter
 import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.enableEdgeToEdge
 private const val MIN_INTERVAL_MS = 800L
 
 
@@ -99,7 +100,7 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("TEST_LOG", "APP ARRANCADA")
+        enableEdgeToEdge()
 
         org.maplibre.android.MapLibre.getInstance(this)
 
