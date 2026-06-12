@@ -132,6 +132,36 @@ class DragonEngine(context: Context) {
         )
     }
 
+    fun setDragonOffset(offset: Float) {
+
+        updateState(
+            _state.value.copy(
+                dragonOffsetY = offset
+            )
+        )
+
+    }
+
+    fun setStatsOffset(offset: Float) {
+
+        updateState(
+            _state.value.copy(
+                statsOffsetY = offset
+            )
+        )
+
+    }
+
+    fun setMapDragonScale(scale: Float) {
+
+        updateState(
+            _state.value.copy(
+                mapDragonScale = scale
+            )
+        )
+
+    }
+
     // ---------------------------------------------------
     // DAILY CHECK (FIX PRINCIPAL)
     // ---------------------------------------------------

@@ -24,5 +24,10 @@ data class DragonState(
     val lastActivityDate: String = "",
 
     // Evita sumar felicidad varias veces en el mismo día
-    val activityRegisteredToday: Boolean = false
+    val activityRegisteredToday: Boolean = false,
+
+    // Ajustes de interfaz
+    val dragonOffsetY: Float = 0f,
+    val statsOffsetY: Float = 0f,
+    val mapDragonScale: Float = 1f
 )

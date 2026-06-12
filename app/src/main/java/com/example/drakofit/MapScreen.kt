@@ -58,6 +58,19 @@ fun MapScreen(
     var lastValidPoint: Point? by remember { mutableStateOf(null) }
     var invalidGpsStreak by remember { mutableStateOf(0) }
 
+    val state by engine.state
+
+    var mapDragonScale by remember(state.mapDragonScale) {
+        mutableStateOf(state.mapDragonScale)
+    }
+
+    var showSettings by remember {
+        mutableStateOf(false)
+    }
+    var dragonLayerRef by remember {
+        mutableStateOf<SymbolLayer?>(null)
+    }
+
     var startTime by remember { mutableStateOf(System.currentTimeMillis()) }
 
     var isPaused by remember { mutableStateOf(false) }
@@ -344,10 +357,12 @@ fun MapScreen(
                             PropertyFactory.iconImage("dragon-icon"),
                             PropertyFactory.iconAllowOverlap(true),
                             PropertyFactory.iconIgnorePlacement(true),
-                            PropertyFactory.iconSize(0.35f)
+                            PropertyFactory.iconSize(0.35f * mapDragonScale)
                         )
 
                         style.addLayer(dragonLayer)
+
+                        dragonLayerRef = dragonLayer
 
                         // =========================================================
                         // 🔥 ROUTE LAYERS (SCORCHED EFFECT)
@@ -417,6 +432,38 @@ fun MapScreen(
                 mapView
             }
         )
+
+        // ⚙️ BOTÓN AJUSTES
+
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            IconButton(
+
+                onClick = {
+
+                    showSettings = true
+
+                },
+
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(
+                        top = 12.dp,
+                        end = 12.dp
+                    )
+
+            ) {
+
+                Text(
+                    text = "⚙️",
+                    fontSize = 28.sp
+                )
+
+            }
+
+        }
 
         // ⏱ TIMER (NOW REACTIVE)
         Box(
@@ -608,6 +655,140 @@ fun MapScreen(
                         color = Color.White.copy(alpha = alpha.value),
                         fontSize = 16.sp
                     )
+                }
+            }
+        }
+
+        if (showSettings) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Card(
+
+                    shape = RoundedCornerShape(20.dp),
+
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xAA1E2F45)
+                    )
+
+                ) {
+
+                    Column(
+
+                        modifier = Modifier.padding(24.dp),
+
+                        horizontalAlignment = Alignment.CenterHorizontally
+
+                    ) {
+
+                        Text(
+                            text = "Ajustes",
+                            color = Color(0xFFFFB74D),
+                            fontSize = 24.sp
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Text(
+                            text = "🐉 Tamaño del dragón",
+                            color = Color(0xFFFFB74D),
+                            fontSize = 18.sp
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Row {
+
+                            Button(
+
+                                onClick = {
+
+                                    if (mapDragonScale > 0.4f) {
+
+                                        mapDragonScale -= 0.1f
+                                        engine.setMapDragonScale(
+                                            mapDragonScale
+                                        )
+
+                                        dragonLayerRef?.setProperties(
+                                            PropertyFactory.iconSize(
+                                                0.35f * mapDragonScale
+                                            )
+                                        )
+
+                                    }
+
+                                }
+
+                            ) {
+
+                                Text("➖")
+
+                            }
+
+                            Spacer(Modifier.width(16.dp))
+
+                            Button(
+
+                                onClick = {
+
+                                    if (mapDragonScale < 1f) {
+
+                                        mapDragonScale += 0.1f
+
+                                        engine.setMapDragonScale(
+                                            mapDragonScale
+                                        )
+
+                                        dragonLayerRef?.setProperties(
+                                            PropertyFactory.iconSize(
+                                                0.35f * mapDragonScale
+                                            )
+                                        )
+
+                                    }
+
+                                }
+
+                            ) {
+
+                                Text("➕")
+
+                            }
+
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Text(
+
+                            text = "Escala: ${(mapDragonScale * 100).toInt()}%",
+
+                            color = Color(0xFFFFD700)
+
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Button(
+
+                            onClick = {
+
+                                showSettings = false
+
+                            }
+
+                        ) {
+
+                            Text("Cerrar")
+
+                        }
+                    }
                 }
             }
         }

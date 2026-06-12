@@ -32,6 +32,9 @@ class DragonStorage(context: Context) {
             .putString("lastCheckDate", getToday())
             .putInt("dailySteps", state.dailySteps)
             .putFloat("dailyDistanceKm", state.dailyDistanceKm)
+            .putFloat("dragonOffsetY", state.dragonOffsetY)
+            .putFloat("statsOffsetY", state.statsOffsetY)
+            .putFloat("mapDragonScale", state.mapDragonScale)
             .apply()
     }
 
@@ -49,6 +52,14 @@ class DragonStorage(context: Context) {
         val totalSteps = prefs.getInt("totalSteps", 0)
 
         return DragonState(
+            dragonOffsetY =
+                prefs.getFloat("dragonOffsetY", 0f),
+
+            statsOffsetY =
+                prefs.getFloat("statsOffsetY", 0f),
+
+            mapDragonScale =
+                prefs.getFloat("mapDragonScale", 1f),
             level = prefs.getInt("level", 1),
             xp = prefs.getInt("xp", 0),
             streak = prefs.getInt("streak", 0),
@@ -90,6 +101,13 @@ class DragonStorage(context: Context) {
     // -------------------------
     // COMPATIBILIDAD (opcional)
     // -------------------------
+
+    fun saveStatsOffset(value: Float) {
+
+        prefs.edit()
+            .putFloat("statsOffsetY", value)
+            .apply()
+    }
 
     fun getLastCheckDate(): String {
         return prefs.getString("lastCheckDate", "") ?: ""

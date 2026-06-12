@@ -71,7 +71,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ColorFilter
 import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
-import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.offset
+
 private const val MIN_INTERVAL_MS = 800L
 
 
@@ -100,7 +104,6 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         org.maplibre.android.MapLibre.getInstance(this)
 
@@ -204,6 +207,11 @@ fun HomeScreen(
     var breathOffset by remember { mutableStateOf(0f) }
     var bounceOffset by remember { mutableStateOf(0f) }
     var isBouncing by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var dragonOffsetY by remember {
+        mutableStateOf(state.dragonOffsetY.dp)
+    }
+    var hudOffsetY by remember { mutableStateOf(0.dp) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -249,7 +257,9 @@ fun HomeScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
     ) {
 
         // 🖼️ FONDO
@@ -266,6 +276,31 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color(0x55000000))
         )
+
+        // Boton ajustes
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+
+            IconButton(
+                onClick = {
+                    showSettings = true
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(
+                        top = 4.dp,
+                        end = 4.dp
+                    )
+            ) {
+
+                Text(
+                    text = "⚙️",
+                    fontSize = 28.sp
+                )
+            }
+        }
 
         // 📱 CONTENIDO UI
         Column(
@@ -405,7 +440,9 @@ fun HomeScreen(
             Spacer(Modifier.height(86.dp))
 
             Box(
-                modifier = Modifier.size(220.dp),
+                modifier = Modifier
+                    .size(220.dp)
+                    .offset(y = dragonOffsetY),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -479,46 +516,52 @@ fun HomeScreen(
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Column(
+                modifier = Modifier.offset(y = state.statsOffsetY.dp)
             ) {
 
-                Box(modifier = Modifier.weight(1f)) {
-                    StatCard(
-                        "Pasos hoy 👣 ",
-                        "${state.dailySteps}"
-                    )
+                Spacer(Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        StatCard(
+                            "Pasos hoy 👣",
+                            "${state.dailySteps}"
+                        )
+                    }
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        StatCard(
+                            "Distancia hoy 📍",
+                            "%.2f km".format(state.dailyDistanceKm)
+                        )
+                    }
                 }
 
-                Box(modifier = Modifier.weight(1f)) {
-                    StatCard(
-                        "Distancia hoy 📍",
-                        " %.2f km".format(state.dailyDistanceKm)
-                    )
-                }
-            }
+                Spacer(Modifier.height(12.dp))
 
-            Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        StatCard(
+                            "Streak",
+                            "${state.streak} días 🔥"
+                        )
+                    }
 
-                Box(modifier = Modifier.weight(1f)) {
-                    StatCard(
-                        "Streak",
-                        "${state.streak} días 🔥"
-                    )
-                }
-
-                Box(modifier = Modifier.weight(1f)) {
-                    StatCard(
-                        "Felicidad",
-                        "${state.happiness} ❤️"
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        StatCard(
+                            "Felicidad",
+                            "${state.happiness} ❤️"
+                        )
+                    }
                 }
             }
 
@@ -535,6 +578,152 @@ fun HomeScreen(
                     "Empezar actividad",
                     fontSize = 18.sp
                 )
+            }
+        }
+
+        if (showSettings) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.20f)),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Card(
+
+                    shape = RoundedCornerShape(20.dp),
+
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xAA1E2F45)
+                    )
+
+                ) {
+
+                    Column(
+
+                        modifier = Modifier.padding(24.dp),
+
+                        horizontalAlignment = Alignment.CenterHorizontally
+
+                    ) {
+
+                        Text(
+                            text = "Ajustes",
+                            color = Color.White,
+                            fontSize = 24.sp
+                        )
+
+                        Spacer(Modifier.height(20.dp))
+
+                        Text(
+                            text = "🐉 Posición del dragón",
+                            color = Color(0xFFFFB74D)
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Row {
+
+                            Button(
+                                onClick = {
+
+                                    if (dragonOffsetY > (-80).dp) {
+
+                                        dragonOffsetY -= 8.dp
+
+                                        engine.setDragonOffset(
+                                            dragonOffsetY.value
+                                        )
+
+                                    }
+
+                                }
+                            ) {
+                                Text("▲")
+                            }
+
+                            Spacer(Modifier.width(16.dp))
+
+                            Button(
+                                onClick = {
+
+                                    if (dragonOffsetY < 80.dp) {
+
+                                        dragonOffsetY += 8.dp
+
+                                        engine.setDragonOffset(
+                                            dragonOffsetY.value
+                                        )
+
+                                    }
+
+                                }
+                            ) {
+                                Text("▼")
+                            }
+                        }
+
+                        Spacer(Modifier.height(28.dp))
+
+                        Text(
+                            text = "📊 Posición estadísticas",
+                            color = Color.LightGray
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Row {
+
+                            Button(
+                                onClick = {
+
+                                    if (hudOffsetY > (-80).dp) {
+
+                                        hudOffsetY -= 8.dp
+
+                                        engine.setStatsOffset(
+                                            hudOffsetY.value
+                                        )
+                                    }
+
+                                }
+                            ) {
+                                Text("▲")
+                            }
+
+                            Spacer(Modifier.width(16.dp))
+
+                            Button(
+                                onClick = {
+
+                                    if (hudOffsetY < 80.dp) {
+
+                                        hudOffsetY += 8.dp
+
+                                        engine.setStatsOffset(
+                                            hudOffsetY.value
+                                        )
+                                    }
+
+                                }
+                            ) {
+                                Text("▼")
+                            }
+                        }
+
+                        Spacer(Modifier.height(28.dp))
+
+                        Button(
+                            onClick = {
+                                showSettings = false
+                            }
+                        ) {
+
+                            Text("Cerrar")
+                        }
+                    }
+                }
             }
         }
     }
