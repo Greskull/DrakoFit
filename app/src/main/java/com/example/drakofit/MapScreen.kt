@@ -232,7 +232,7 @@ fun MapScreen(
 
                     val distance = results[0]
 
-                    if (distance > 400f) {
+                    if (distance > 250f || loc.speed > 20f) {
 
                         invalidGpsStreak++
 

@@ -63,7 +63,7 @@ class DragonStorage(context: Context) {
             level = prefs.getInt("level", 1),
             xp = prefs.getInt("xp", 0),
             streak = prefs.getInt("streak", 0),
-            happiness = prefs.getInt("happiness", 5),
+            happiness = prefs.getInt("happiness", 3),
 
             totalSteps = totalSteps,
 
@@ -77,17 +77,7 @@ class DragonStorage(context: Context) {
                     LocalDate.now().toString()
                 ) ?: LocalDate.now().toString(),
             activityRegisteredToday = prefs.getBoolean("activityRegisteredToday", false)
-        ).also {
-
-            // 🔥 RESET REAL DE DÍA NUEVO (UNA SOLA VEZ)
-            if (isNewDay) {
-                prefs.edit()
-                    .putString("lastCheckDate", today)
-                    .putInt("dailySteps", 0)
-                    .putFloat("dailyDistanceKm", 0f)
-                    .apply()
-            }
-        }
+        )
     }
 
     // -------------------------

@@ -9,7 +9,7 @@ data class DragonState(
     val streak: Int = 0,
 
     // Felicidad del dragón (máximo 7)
-    val happiness: Int = 5,
+    val happiness: Int = 3,
 
     // Pasos acumulados históricos
     val totalSteps: Int = 0,
