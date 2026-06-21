@@ -357,7 +357,7 @@ fun MapScreen(
                             PropertyFactory.iconImage("dragon-icon"),
                             PropertyFactory.iconAllowOverlap(true),
                             PropertyFactory.iconIgnorePlacement(true),
-                            PropertyFactory.iconSize(0.35f * mapDragonScale)
+                            PropertyFactory.iconSize(0.30f * mapDragonScale)
                         )
 
                         style.addLayer(dragonLayer)
@@ -487,9 +487,11 @@ fun MapScreen(
         }
 
         // 📊 HUD
+        // 📊 HUD
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
                 .padding(12.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally

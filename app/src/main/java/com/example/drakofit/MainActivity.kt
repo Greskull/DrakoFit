@@ -70,11 +70,20 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ColorFilter
 import android.content.Intent
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.ui.graphics.Brush
 
 private const val MIN_INTERVAL_MS = 800L
 
@@ -194,6 +203,35 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+val cinzel = FontFamily(
+    Font(R.font.cinzel)
+)
+
+val shieldShape = object : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+
+        val w = size.width
+        val h = size.height
+
+        val path = Path().apply {
+
+            moveTo(w * 0.5f, 0f)
+            lineTo(w, h * 0.25f)
+            lineTo(w * 0.8f, h * 0.75f)
+            lineTo(w * 0.5f, h)
+            lineTo(w * 0.2f, h * 0.75f)
+            lineTo(0f, h * 0.25f)
+            close()
+        }
+
+        return Outline.Generic(path)
+    }
+}
+
 @Composable
 fun HomeScreen(
     engine: DragonEngine,
@@ -310,37 +348,40 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Text(
-                buildAnnotatedString {
+            val infiniteTransition = rememberInfiniteTransition(label = "titleGlow")
 
-                    withStyle(
-                        style = SpanStyle(
-                            color = Color(0xFFE53935)
-                        )
-                    ) {
+            val glowAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 0.85f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1800, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "glowAlpha"
+            )
+
+            Text(
+                text = buildAnnotatedString {
+
+                    withStyle(SpanStyle(color = Color(0xFFE53935))) {
                         append("Drako")
                     }
 
-                    withStyle(
-                        style = SpanStyle(
-                            color = Color(0xFFFFD700)
-                        )
-                    ) {
+                    withStyle(SpanStyle(color = Color(0xFFFFD700))) {
                         append("Fit")
                     }
                 },
 
+                fontFamily = cinzel,
                 fontSize = 36.sp,
-                fontWeight = FontWeight.ExtraBold,
-
+                fontWeight = FontWeight.Bold,
                 style = TextStyle(
                     shadow = Shadow(
-                        color = Color(0xAA000000),
-                        blurRadius = 12f
+                        color = Color(0xFFFF4500).copy(alpha = glowAlpha),
+                        blurRadius = 22f
                     )
                 )
             )
-
             Spacer(Modifier.height(12.dp))
 
             Row(
@@ -350,42 +391,55 @@ fun HomeScreen(
 
                 // 🏅 MEDALLA NIVEL
                 Card(
-                    modifier = Modifier.shadow(
-                        elevation = 18.dp,
-                        shape = RoundedCornerShape(18.dp),
-                        ambientColor = Color(0x66FF6A00),
-                        spotColor = Color(0xFFFF6A00)
-                    ),
-                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .defaultMinSize(minWidth = 72.dp, minHeight = 72.dp)
+                        .shadow(
+                            elevation = 18.dp,
+                            shape = shieldShape,
+                            ambientColor = Color(0x66FF6A00),
+                            spotColor = Color(0xFFFF6A00)
+                        ),
+                    shape = shieldShape,
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xEE1E2F45)
                     ),
                     border = BorderStroke(
                         3.dp,
-                        Color(0xFFFF6A00)
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFFFD36A),
+                                Color(0xFFFF6A00),
+                                Color(0xFF8A2C00)
+                            )
+                        )
                     )
                 ) {
 
-                    Column(
-                        modifier = Modifier.padding(
-                            horizontal = 14.dp,
-                            vertical = 10.dp
-                        ),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .defaultMinSize(minWidth = 72.dp, minHeight = 72.dp),
+                        contentAlignment = Alignment.Center
                     ) {
 
-                        Text(
-                            "NIVEL",
-                            color = Color.LightGray,
-                            fontSize = 10.sp
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
 
-                        Text(
-                            "${state.level}",
-                            color = Color(0xFFFFD700),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                            Text(
+                                text = "NIVEL",
+                                color = Color.LightGray,
+                                fontSize = 16.sp
+                            )
+
+                            Text(
+                                text = "${state.level}",
+                                color = Color(0xFFFFD700),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
@@ -429,7 +483,7 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(2.dp))
 
             Text(
                 "¡Listo para hacer deporte a tu lado!",
@@ -441,7 +495,7 @@ fun HomeScreen(
 
             Box(
                 modifier = Modifier
-                    .size(220.dp)
+                    .size(200.dp)
                     .offset(y = dragonOffsetY),
                 contentAlignment = Alignment.Center
             ) {

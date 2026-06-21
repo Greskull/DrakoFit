@@ -186,7 +186,9 @@ class DragonEngine(context: Context) {
                 LocalDate.parse(old.lastActivityDate)
             }
 
-        val isNewDay = old.lastDailyCheckDate != today
+        val lastActivityDate = old.lastActivityDate
+
+        val isNewDay = lastActivityDate.substring(0, 10) != today
 
         val missedDay = lastActivity.isBefore(todayDate.minusDays(1))
 
