@@ -70,12 +70,15 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ColorFilter
 import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.animation.core.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Outline
@@ -84,6 +87,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.zIndex
 
 private const val MIN_INTERVAL_MS = 800L
 
@@ -250,6 +259,7 @@ fun HomeScreen(
         mutableStateOf(state.dragonOffsetY.dp)
     }
     var hudOffsetY by remember { mutableStateOf(0.dp) }
+    var showResetWarning by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -337,6 +347,140 @@ fun HomeScreen(
                     text = "⚙️",
                     fontSize = 28.sp
                 )
+            }
+        }
+        // Boton Menu
+        var showMenu by remember { mutableStateOf(false) }
+        var showResetWarning by remember { mutableStateOf(false) }
+
+// Botón Menu
+        IconButton(
+            onClick = {
+                showMenu = true
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menú",
+                modifier = Modifier.size(30.dp)
+            )
+        }
+
+// 🔽 MENU DESPLEGABLE
+        if (showMenu) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(100f)
+                    .background(Color.Black.copy(alpha = 0.5f))
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(top = 60.dp, start = 12.dp)
+                        .background(Color(0xFF222222))
+                        .padding(12.dp)
+                ) {
+
+                    Text(
+                        text = "AJUSTES",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = cinzel
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    TextButton(
+                        onClick = {
+                            showResetWarning = true
+                            showMenu = false
+                        }
+                    ) {
+                        Text(
+                            text = "Resetear dragón",
+                            color = Color.Red,
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            showMenu = false
+                        }
+                    ) {
+                        Text(
+                            text = "Cerrar",
+                            color = Color.White,
+                        )
+                    }
+                }
+            }
+        }
+        if (showResetWarning) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(100f)
+                    .background(Color.Black.copy(alpha = 0.75f)),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+
+                    val scale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 1.12f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(500, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "scale"
+                    )
+
+                    Text(
+                        text = "⚠️ ¡CUIDADO!\nESTA ACCIÓN ES IRREVERSIBLE\n¿CONTINUAR?",
+                        color = Color.Red,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 22.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(30.dp))
+
+                    Row {
+
+                        Button(
+                            onClick = {
+                                engine.resetDragon()
+                                showResetWarning = false
+                            }
+                        ) {
+                            Text("CONFIRMAR")
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Button(
+                            onClick = {
+                                showResetWarning = false
+                            }
+                        ) {
+                            Text("CANCELAR")
+                        }
+                    }
+                }
             }
         }
 
@@ -604,17 +748,43 @@ fun HomeScreen(
                 ) {
 
                     Box(modifier = Modifier.weight(1f)) {
+
                         StatCard(
-                            "Streak",
-                            "${state.streak} días 🔥"
+                            title = "Streak",
+                            value = "${state.streak} días 🔥"
                         )
+
+                        if (state.streak > 0) {
+                            Text(
+                                text = "BONUS\nEXP!",
+                                color = Color(0xFF4FC3F7),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 12.dp)
+                            )
+                        }
                     }
 
                     Box(modifier = Modifier.weight(1f)) {
+
                         StatCard(
-                            "Felicidad",
-                            "${state.happiness} ❤️"
+                            title = "Felicidad",
+                            value = "${state.happiness} ❤️"
                         )
+
+                        if (state.happiness == 7) {
+                            Text(
+                                text = "BONUS\nREWARDS!",
+                                color = Color(0xFF4FC3F7),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 12.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -630,6 +800,8 @@ fun HomeScreen(
             ) {
                 Text(
                     "Empezar actividad",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = cinzel,
                     fontSize = 18.sp
                 )
             }
@@ -779,6 +951,7 @@ fun HomeScreen(
                     }
                 }
             }
+
         }
     }
 }

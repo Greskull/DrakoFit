@@ -5,6 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import java.time.LocalDate
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 class DragonEngine(context: Context) {
 
@@ -62,6 +63,16 @@ class DragonEngine(context: Context) {
         )
     }
 
+    fun resetDragon() {
+        val safeState = DragonState() // estado base limpio
+
+        updateState(
+            safeState.copy(
+                lastDailyCheckDate = LocalDate.now().toString()
+            )
+        )
+    }
+
     // ---------------------------------------------------
     // PASOS
     // ---------------------------------------------------
@@ -96,7 +107,8 @@ class DragonEngine(context: Context) {
     }
 
     fun addWalkingXP(steps: Int) {
-        val xpGain = steps / 100
+        val baseXp = steps / 100
+        val xpGain = (baseXp * (1f + _state.value.streak * 0.01f)).roundToInt()
         addXp(xpGain)
     }
 
@@ -179,18 +191,21 @@ class DragonEngine(context: Context) {
         val todayDate = LocalDate.now()
         val today = todayDate.toString()
 
-        val lastActivity =
-            if (old.lastActivityDate.isBlank()) {
-                todayDate
-            } else {
-                LocalDate.parse(old.lastActivityDate)
-            }
-
         val lastActivityDate = old.lastActivityDate
 
-        val isNewDay = lastActivityDate.substring(0, 10) != today
+        val safeLastActivity = try {
+            if (lastActivityDate.isBlank()) {
+                todayDate
+            } else {
+                LocalDate.parse(lastActivityDate)
+            }
+        } catch (e: Exception) {
+            todayDate
+        }
 
-        val missedDay = lastActivity.isBefore(todayDate.minusDays(1))
+        val isNewDay = safeLastActivity.toString() != today
+
+        val missedDay = safeLastActivity.isBefore(todayDate.minusDays(1))
 
         val resetDaily = if (isNewDay) {
             old.copy(
