@@ -29,7 +29,6 @@ import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.annotations.Marker
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.runtime.*
 import androidx.compose.animation.core.*
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
@@ -314,15 +313,24 @@ fun MapScreen(
             factory = { ctx ->
 
                 val mapView = MapView(ctx)
+
                 mapView.onCreate(null)
+                mapView.onStart()
+                mapView.onResume()
 
                 mapView.getMapAsync { map ->
 
                     mapRef.value = map
 
-                    map.setStyle(
+                    val isDark = engine.state.value.isMapDarkMode
+
+                    val styleUrl = if (isDark) {
+                        "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+                    } else {
                         "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
-                    ) { style ->
+                    }
+
+                    map.setStyle(styleUrl) { style ->
 
                         // 🟠 ROUTE SOURCE
                         val routeSource = GeoJsonSource(

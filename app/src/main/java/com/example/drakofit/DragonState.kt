@@ -29,6 +29,8 @@ data class DragonState(
     // Ajustes de interfaz
     val dragonOffsetY: Float = 0f,
     val statsOffsetY: Float = 0f,
-    val mapDragonScale: Float = 1f
+    val mapDragonScale: Float = 1f,
+    //Darkmode
+    val isMapDarkMode: Boolean = false
 
 )

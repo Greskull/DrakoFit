@@ -174,6 +174,15 @@ class DragonEngine(context: Context) {
 
     }
 
+    //Darkmode
+    fun setMapDarkMode(enabled: Boolean) {
+        updateState(
+            _state.value.copy(
+                isMapDarkMode = enabled
+            )
+        )
+    }
+
     // ---------------------------------------------------
     // DAILY CHECK (FIX PRINCIPAL)
     // ---------------------------------------------------

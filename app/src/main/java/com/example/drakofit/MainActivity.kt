@@ -1,28 +1,50 @@
 package com.example.drakofit
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,68 +53,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
-import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.style.sources.GeoJsonSource
-import android.util.Log
-import android.graphics.BitmapFactory
-import org.maplibre.android.style.layers.PropertyFactory
-import org.maplibre.android.style.layers.SymbolLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.border
-import androidx.compose.ui.draw.shadow
-import androidx.compose.material3.ButtonDefaults
-import kotlinx.coroutines.delay
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.ColorFilter
-import android.content.Intent
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.animation.core.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.delay
+import org.maplibre.android.geometry.LatLng
 
 private const val MIN_INTERVAL_MS = 800L
 
@@ -405,7 +394,21 @@ fun HomeScreen(
                     ) {
                         Text(
                             text = "Resetear dragón",
-                            color = Color.Red,
+                            color = Color.Red
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            engine.setMapDarkMode(!engine.state.value.isMapDarkMode)
+                        }
+                    ) {
+                        Text(
+                            text = if (engine.state.value.isMapDarkMode)
+                                "Mapa: Modo Oscuro"
+                            else
+                                "Mapa: Modo Claro",
+                            color = Color.White
                         )
                     }
 
@@ -416,7 +419,7 @@ fun HomeScreen(
                     ) {
                         Text(
                             text = "Cerrar",
-                            color = Color.White,
+                            color = Color.White
                         )
                     }
                 }
@@ -954,284 +957,6 @@ fun HomeScreen(
                     }
                 }
             }
-        }
-    }
-}
-@Composable
-fun ActivityScreen(
-    engine: DragonEngine,
-    onFinish: (Float) -> Unit
-) {
-
-    val context = LocalContext.current
-    var justResumed by remember { mutableStateOf(false) }
-
-
-    // 🧭 CONTROL PRIMER FIX GPS
-    var firstLocationReceived by remember {
-        mutableStateOf(false)
-    }
-
-    val mapRef = remember {
-        mutableStateOf<MapLibreMap?>(null)
-    }
-
-    val fusedClient = remember {
-        LocationServices.getFusedLocationProviderClient(context)
-    }
-
-    var lastLocation by remember {
-        mutableStateOf<Location?>(null)
-    }
-
-    var distanceMeters by remember {
-        mutableStateOf(0f)
-    }
-
-    var isPaused by remember {
-        mutableStateOf(false)
-    }
-
-    // 🟠 SOURCE RUTA
-    var routeSource: GeoJsonSource? = null
-
-    // 🧠 THROTTLING GPS
-    var lastUpdateTime = 0L
-
-    val callback = object : LocationCallback() {
-
-        override fun onLocationResult(result: LocationResult) {
-
-            if (isPaused) return
-
-            val newLocation = result.lastLocation ?: return
-            if (justResumed) {
-                lastLocation = newLocation
-                justResumed = false
-                return
-            }
-
-            // 🧠 throttling
-            val now = System.currentTimeMillis()
-
-            if (now - lastUpdateTime < MIN_INTERVAL_MS) return
-
-            lastUpdateTime = now
-
-            // 🚨 filtro precisión
-            if (newLocation.accuracy > 18f) return
-
-            Log.d(
-                "DRAGO_GPS",
-                "lat=${newLocation.latitude}, lon=${newLocation.longitude}, acc=${newLocation.accuracy}"
-            )
-
-            val newPoint = org.maplibre.android.geometry.LatLng(
-                newLocation.latitude,
-                newLocation.longitude
-            )
-
-            // 🐉 ACTUALIZAR DRAGÓN
-            mapRef.value?.getStyle { style ->
-
-                val dragonSource =
-                    style.getSourceAs<GeoJsonSource>("dragon-source")
-
-                dragonSource?.setGeoJson(
-                    org.maplibre.geojson.Feature.fromGeometry(
-                        org.maplibre.geojson.Point.fromLngLat(
-                            newPoint.longitude,
-                            newPoint.latitude
-                        )
-                    )
-                )
-            }
-
-            // 🟠 RUTA
-            RouteBuffer.addPoint(newPoint)
-
-            RouteManager.addPoint(
-                newPoint,
-                newLocation.accuracy
-            )
-
-            routeSource?.let { source ->
-
-                val points = RouteBuffer.points
-
-                if (points.size < 2) return@let
-
-                source.setGeoJson(
-                    org.maplibre.geojson.Feature.fromGeometry(
-                        org.maplibre.geojson.LineString.fromLngLats(
-                            points.map {
-                                org.maplibre.geojson.Point.fromLngLat(
-                                    it.longitude,
-                                    it.latitude
-                                )
-                            }
-                        )
-                    )
-                )
-            }
-
-            // 📷 PRIMER FIX → CENTRAR CÁMARA
-            if (!firstLocationReceived) {
-
-                firstLocationReceived = true
-
-                mapRef.value?.animateCamera(
-                    org.maplibre.android.camera.CameraUpdateFactory
-                        .newLatLngZoom(
-                            newPoint,
-                            17.5
-                        )
-                )
-            }
-
-            // 📏 DISTANCIA
-            lastLocation?.let { oldLocation ->
-
-                val results = FloatArray(1)
-
-                android.location.Location.distanceBetween(
-                    oldLocation.latitude,
-                    oldLocation.longitude,
-                    newLocation.latitude,
-                    newLocation.longitude,
-                    results
-                )
-
-                val delta = results[0]
-
-                // 🚨 FILTRO ANTI-SALTO GPS
-                if (delta in 0.1f..50f) {
-                    distanceMeters += delta
-                }
-
-                // ❌ si es un salto, reseteamos base pero NO sumamos
-                else {
-                    lastLocation = newLocation
-                    return@let
-                }
-            }
-
-            lastLocation = newLocation
-        }
-    }
-
-    LaunchedEffect(Unit) {
-
-        val permissionGranted =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-        if (!permissionGranted) return@LaunchedEffect
-
-        val request =
-            LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                4000
-            )
-                .setMinUpdateDistanceMeters(2f)
-                .setMaxUpdateDelayMillis(4000)
-                .build()
-
-        fusedClient.requestLocationUpdates(
-            request,
-            callback,
-            android.os.Looper.getMainLooper()
-        )
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-
-        // 🗺️ MAPA
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-
-                val mapView = MapView(ctx)
-
-                mapView.onCreate(null)
-
-                mapView.getMapAsync { map ->
-
-                    mapRef.value = map
-
-                    map.setStyle(
-                        "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
-                    ) { style ->
-
-                        // 🐉 IMAGE
-                        val dragonBitmap =
-                            BitmapFactory.decodeResource(
-                                context.resources,
-                                getDragonSprite(
-                                    engine.getState().level
-                                )
-                            )
-
-                        style.addImage(
-                            "dragon-icon",
-                            dragonBitmap
-                        )
-
-                        // 🐉 SOURCE
-                        style.addSource(
-                            GeoJsonSource(
-                                "dragon-source",
-                                org.maplibre.geojson.Feature.fromGeometry(
-                                    org.maplibre.geojson.Point.fromLngLat(
-                                        0.0,
-                                        0.0
-                                    )
-                                )
-                            )
-                        )
-
-                        // 🐉 LAYER
-                        style.addLayer(
-                            SymbolLayer(
-                                "dragon-layer",
-                                "dragon-source"
-                            ).withProperties(
-                                PropertyFactory.iconImage("dragon-icon"),
-                                PropertyFactory.iconAllowOverlap(true),
-                                PropertyFactory.iconIgnorePlacement(true),
-                                PropertyFactory.iconSize(0.35f)
-                            )
-                        )
-
-                        // 🟠 SOURCE RUTA
-                        routeSource = GeoJsonSource(
-                            "route-source"
-                        )
-
-                        style.addSource(routeSource!!)
-
-                    }
-                }
-
-                mapView
-            }
-        )
-
-        // 🎮 UI
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Spacer(Modifier.height(20.dp))
-
-            Spacer(Modifier.height(20.dp))
         }
     }
 }
