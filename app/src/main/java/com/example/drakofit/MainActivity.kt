@@ -345,7 +345,7 @@ fun HomeScreen(
         var showMenu by remember { mutableStateOf(false) }
         var showResetWarning by remember { mutableStateOf(false) }
 
-// Botón Menu
+        // Botón Menu
         IconButton(
             onClick = {
                 showMenu = true
@@ -359,7 +359,7 @@ fun HomeScreen(
             )
         }
 
-// 🔽 MENU DESPLEGABLE
+        // 🔽 MENU DESPLEGABLE
         if (showMenu) {
 
             Box(
@@ -957,6 +957,13 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+        if (state.isMapDarkMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+            )
         }
     }
 }
