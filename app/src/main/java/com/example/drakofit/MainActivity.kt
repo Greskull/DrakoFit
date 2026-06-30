@@ -154,6 +154,9 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             var inActivity by remember { mutableStateOf(false) }
+            LaunchedEffect(inActivity) {
+                Log.d("DRAKOFIT", "inActivity = $inActivity")
+            }
             val activityContext = this@MainActivity
 
             var lastActivityText by remember { mutableStateOf("") }
@@ -639,7 +642,7 @@ fun HomeScreen(
 
             Box(
                 modifier = Modifier
-                    .size(200.dp)
+                    .size(180.dp)
                     .offset(y = dragonOffsetY),
                 contentAlignment = Alignment.Center
             ) {
@@ -951,7 +954,6 @@ fun HomeScreen(
                     }
                 }
             }
-
         }
     }
 }
