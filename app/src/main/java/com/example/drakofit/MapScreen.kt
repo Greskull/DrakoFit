@@ -32,6 +32,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.*
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
+import android.util.Log
 
 enum class FinishReason {
     NORMAL,
@@ -94,18 +95,8 @@ fun MapScreen(
         LocationServices.getFusedLocationProviderClient(context)
     }
 
-    LaunchedEffect(finishReason) {
-
-        when (finishReason) {
-
-            FinishReason.NORMAL,
-            FinishReason.GPS_SUSPICIOUS -> {
-                delay(5000)
-                onFinish(distanceMeters)
-            }
-
-            null -> return@LaunchedEffect
-        }
+    val routeHistoryStorage = remember {
+        RouteHistoryStorage(context)
     }
 
     // ⏱ TIMER TICK (UI REFRESH)
@@ -162,6 +153,44 @@ fun MapScreen(
         val sec = ((pace - min) * 60).toInt()
 
         return "%d:%02d".format(min, sec)
+    }
+
+    //Funcion para RouteHistoryEntry
+    LaunchedEffect(finishReason) {
+
+        when (finishReason) {
+
+            FinishReason.NORMAL,
+            FinishReason.GPS_SUSPICIOUS -> {
+
+                val km = calculateDistance(routePoints) / 1000f
+
+                val sessionSteps = getSteps(km)
+
+                val route = RouteHistoryEntry(
+
+                    distanceKm = km,
+
+                    durationSeconds = (getElapsedTime() / 1000L),
+
+                    steps = sessionSteps,
+
+                    calories = getCalories(km).toInt(),
+
+                    pace = getPace(km, getElapsedTime()),
+
+                    xpEarned = sessionSteps / 100
+                )
+
+                routeHistoryStorage.saveRoute(route)
+
+                delay(5000)
+
+                onFinish(distanceMeters)
+            }
+
+            null -> return@LaunchedEffect
+        }
     }
 
     // 🧭 AUTO CENTER (PAUSE AWARE)
@@ -243,7 +272,7 @@ fun MapScreen(
                     }
                 }
 
-// 👇 IMPORTANTE: este es OTRO "last", renombrado
+                // 👇 IMPORTANTE: este es OTRO "last", renombrado
                 val lastRoutePoint = routePoints.lastOrNull()
 
                 if (lastRoutePoint != null &&
@@ -494,7 +523,6 @@ fun MapScreen(
             }
         }
 
-        // 📊 HUD
         // 📊 HUD
         Column(
             modifier = Modifier

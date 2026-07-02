@@ -138,30 +138,30 @@ object RouteManager {
 
             val distance = results[0]
 
-// 🚫 filtros anti-ruido GPS
+            // 🚫 filtros anti-ruido GPS
             if (distance < 1f) return
             if (distance > 80f) return
 
-// 📏 actualizar distancia total
+            // 📏 actualizar distancia total
             totalDistance += distance
 
             val now = System.currentTimeMillis()
 
-// 🧠 actualizar ventana de ritmo
+            // 🧠 actualizar ventana de ritmo
             paceWindow.add(
                 TimePoint(now, totalDistance)
             )
 
-// limpiar datos antiguos
+            // limpiar datos antiguos
             paceWindow.removeAll {
                 now - it.time > WINDOW_MS
             }
 
-// 📡 NOTIFICAR SIEMPRE (CLAVE DEL BUG)
+            // 📡 NOTIFICAR SIEMPRE (CLAVE DEL BUG)
             onDistanceUpdate?.invoke(totalDistance)
             updatePaceWindow()
 
-// limpiar datos antiguos
+            // limpiar datos antiguos
             paceWindow.removeAll {
                 now - it.time > WINDOW_MS
             }

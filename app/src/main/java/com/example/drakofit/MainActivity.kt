@@ -82,9 +82,53 @@ import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import org.maplibre.android.geometry.LatLng
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 private const val MIN_INTERVAL_MS = 800L
 
+fun formatDuration(seconds: Long): String {
+    val h = seconds / 3600
+    val m = (seconds % 3600) / 60
+    val s = seconds % 60
+
+    return if (h > 0)
+        "%d:%02d:%02d".format(h, m, s)
+    else
+        "%d:%02d".format(m, s)
+}
+
+fun formatDate(timestamp: Long): String {
+
+    val date = java.time.Instant.ofEpochMilli(timestamp)
+        .atZone(java.time.ZoneId.systemDefault())
+        .toLocalDate()
+
+    val today = java.time.LocalDate.now()
+
+    return when {
+
+        date == today ->
+            "Hoy"
+
+        date == today.minusDays(1) ->
+            "Ayer"
+
+        date.isAfter(today.minusDays(7)) ->
+            date.dayOfWeek.getDisplayName(
+                java.time.format.TextStyle.FULL,
+                java.util.Locale("es", "ES")
+            ).replaceFirstChar {
+                it.uppercase()
+            }
+
+        else ->
+            java.time.format.DateTimeFormatter
+                .ofPattern("dd/MM/yyyy")
+                .format(date)
+    }
+}
 
 data class RoutePoint(
     val latitude: Double,
@@ -143,9 +187,8 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             var inActivity by remember { mutableStateOf(false) }
-            LaunchedEffect(inActivity) {
+
                 Log.d("DRAKOFIT", "inActivity = $inActivity")
-            }
             val activityContext = this@MainActivity
 
             var lastActivityText by remember { mutableStateOf("") }
@@ -252,6 +295,7 @@ fun HomeScreen(
     }
     var hudOffsetY by remember { mutableStateOf(0.dp) }
     var showResetWarning by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -344,6 +388,9 @@ fun HomeScreen(
         // Boton Menu
         var showMenu by remember { mutableStateOf(false) }
         var showResetWarning by remember { mutableStateOf(false) }
+        var showHistory by remember {
+            mutableStateOf(false)
+        }
 
         // Botón Menu
         IconButton(
@@ -395,6 +442,18 @@ fun HomeScreen(
                         Text(
                             text = "Resetear dragón",
                             color = Color.Red
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            showHistory = true
+                            showMenu = false
+                        }
+                    ) {
+                        Text(
+                            text = "📜 Historial rutas largas",
+                            color = Color.White
                         )
                     }
 
@@ -485,6 +544,133 @@ fun HomeScreen(
                         ) {
                             Text("CANCELAR")
                         }
+                    }
+                }
+            }
+        }
+        // Historial Rutas
+        if (showHistory) {
+            val routeHistoryStorage = remember {
+                RouteHistoryStorage(context)
+            }
+
+            val routes = remember(showHistory) {
+                routeHistoryStorage.getRecentRoutes()
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(100f)
+                    .background(Color.Black.copy(alpha = 0.75f)),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .background(Color(0xFF222222))
+                        .padding(24.dp)
+                ) {
+
+                    Text(
+                        text = "📜 HISTORIAL RUTAS LARGAS",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    LazyColumn {
+
+                        items(routes) { route ->
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+
+                                    Text(
+                                        text = "📅 ${formatDate(route.timestamp)}",
+                                        color = Color.White
+                                    )
+
+                                    Text(
+                                        text = "⏱ ${formatDuration(route.durationSeconds)}",
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+
+                                    Text(
+                                        text = "👣 ${route.steps} pasos",
+                                        color = Color.White
+                                    )
+
+                                    Text(
+                                        text = "📍 ${"%.2f".format(route.distanceKm)} km",
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+
+                                    Text(
+                                        text = "🔥 ${route.calories} kcal",
+                                        color = Color.White
+                                    )
+
+                                    Text(
+                                        text = "⭐ ${route.xpEarned} XP",
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "🏃 ${route.pace} min/km",
+                                    color = Color.White
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color.DarkGray)
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = {
+                            showHistory = false
+                        }
+                    ) {
+                        Text("Cerrar")
                     }
                 }
             }

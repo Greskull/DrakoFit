@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import android.util.Log
 
 class TrackingService : Service() {
 
@@ -19,6 +20,7 @@ class TrackingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.d("DrakoFit", "MainActivity -> onCreate")
     }
 
     override fun onStartCommand(
@@ -37,8 +39,8 @@ class TrackingService : Service() {
     }
 
     override fun onDestroy() {
-        stopForeground(true)
         super.onDestroy()
+        Log.d("DrakoFit", "MainActivity -> onDestroy")
     }
 
     // ---------------------------------------------------
