@@ -1,5 +1,7 @@
 package com.example.drakofit
 
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 fun getDragonSprite(
     dragon: DragonType,
     level: Int
@@ -56,5 +58,40 @@ fun getDragonSprite(
             12 -> R.drawable.dragon_sprite_planta_12
             else -> R.drawable.dragon_sprite_planta_13
         }
+    }
+}
+fun getDragonColorFilter(
+    dragon: DragonType,
+    skin: SkinType
+): ColorFilter? {
+
+    return when (skin) {
+
+        SkinType.NORMAL,
+
+        SkinType.GOLD -> {
+
+            val matrix = ColorMatrix(
+                floatArrayOf(
+
+                    // RED
+                    1.15f, 0.15f, 0f, 0f, 25f,
+
+                    // GREEN
+                    0.10f, 1.05f, 0f, 0f, 18f,
+
+                    // BLUE
+                    0f, 0f, 0.65f, 0f, -12f,
+
+                    // ALPHA
+                    0f, 0f, 0f, 1f, 0f
+
+                )
+            )
+
+            ColorFilter.colorMatrix(matrix)
+        }
+
+        SkinType.SHINY -> null
     }
 }

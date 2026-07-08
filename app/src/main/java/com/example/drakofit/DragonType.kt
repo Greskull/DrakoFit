@@ -8,3 +8,13 @@ enum class DragonType {
 
     PLANT
 }
+
+// --------------------------------------------------
+// SKINS
+// --------------------------------------------------
+
+enum class SkinType {
+    NORMAL,
+    SHINY,
+    GOLD
+}

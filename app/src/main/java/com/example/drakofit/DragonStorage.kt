@@ -165,4 +165,109 @@ class DragonStorage(context: Context) {
     fun hasPlantDragon(): Boolean {
         return prefs.getBoolean("reward_plant", false)
     }
+    // ---------------------------------------------------
+// PROGRESO DE CADA DRAGÓN
+// ---------------------------------------------------
+
+    fun saveDragonProgress(
+        type: DragonType,
+        level: Int,
+        xp: Int
+    ) {
+
+        val prefix = when (type) {
+            DragonType.FIRE -> "fire"
+            DragonType.WATER -> "water"
+            DragonType.PLANT -> "plant"
+        }
+
+        prefs.edit()
+            .putInt("${prefix}_level", level)
+            .putInt("${prefix}_xp", xp)
+            .apply()
+    }
+
+    fun loadDragonProgress(
+        type: DragonType
+    ): Pair<Int, Int> {
+
+        val prefix = when (type) {
+            DragonType.FIRE -> "fire"
+            DragonType.WATER -> "water"
+            DragonType.PLANT -> "plant"
+        }
+
+        val defaultLevel =
+            if (type == DragonType.FIRE) 1 else 1
+
+        val level =
+            prefs.getInt("${prefix}_level", defaultLevel)
+
+        val xp =
+            prefs.getInt("${prefix}_xp", 0)
+
+        return Pair(level, xp)
+    }
+    // -------------------------
+    // SKINS
+    // -------------------------
+
+    fun saveActiveSkin(type: SkinType) {
+
+        prefs.edit()
+            .putString("activeSkin", type.name)
+            .apply()
+    }
+
+    fun loadActiveSkin(): SkinType {
+
+        val value = prefs.getString(
+            "activeSkin",
+            SkinType.NORMAL.name
+        ) ?: SkinType.NORMAL.name
+
+        return try {
+
+            SkinType.valueOf(value)
+
+        } catch (e: Exception) {
+
+            // Compatibilidad con versiones antiguas
+            SkinType.NORMAL
+
+        }
+    }
+
+    fun saveAuraEnabled(enabled: Boolean) {
+
+        prefs.edit()
+            .putBoolean("auraEnabled", enabled)
+            .apply()
+    }
+
+    fun loadAuraEnabled(): Boolean {
+
+        return prefs.getBoolean(
+            "auraEnabled",
+            false
+        )
+    }
+
+    fun saveSkinUnlocked(
+        type: SkinType,
+        unlocked: Boolean
+    ) {
+
+        prefs.edit()
+            .putBoolean("skin_${type.name}", unlocked)
+            .apply()
+    }
+
+    fun isSkinUnlocked(type: SkinType): Boolean {
+
+        return prefs.getBoolean(
+            "skin_${type.name}",
+            type == SkinType.NORMAL
+        )
+    }
 }

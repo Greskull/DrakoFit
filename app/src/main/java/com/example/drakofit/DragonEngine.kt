@@ -13,6 +13,8 @@ class DragonEngine(context: Context) {
     //Función distintos dragones
     private var currentDragon =
         storage.loadCurrentDragon()
+    private var activeSkin = storage.loadActiveSkin()
+    private var auraEnabled = storage.loadAuraEnabled()
 
     // 🔥 ESTADO ÚNICO
     private val _state = mutableStateOf(
@@ -47,6 +49,7 @@ class DragonEngine(context: Context) {
     // ---------------------------------------------------
 
     private fun addXp(xpGain: Int) {
+
         var newXp = _state.value.xp + xpGain
         var newLevel = _state.value.level
 
@@ -58,11 +61,18 @@ class DragonEngine(context: Context) {
             requiredXp = (100 * 1.5.pow(newLevel - 1)).toInt()
         }
 
-        updateState(
-            _state.value.copy(
-                xp = newXp,
-                level = newLevel
-            )
+        val newState = _state.value.copy(
+            xp = newXp,
+            level = newLevel
+        )
+
+        updateState(newState)
+
+        // Guardar el progreso del dragón activo
+        storage.saveDragonProgress(
+            currentDragon,
+            newState.level,
+            newState.xp
         )
     }
 
@@ -246,8 +256,64 @@ class DragonEngine(context: Context) {
 
     fun setCurrentDragon(type: DragonType) {
 
-        currentDragon = type
+        // Si ya está seleccionado, no hacemos nada
+        if (type == currentDragon) return
 
+        // Guardamos el progreso del dragón actual
+        storage.saveDragonProgress(
+            currentDragon,
+            _state.value.level,
+            _state.value.xp
+        )
+
+        // Cambiamos el dragón activo
+        currentDragon = type
         storage.saveCurrentDragon(type)
+
+        // Cargamos el progreso del nuevo dragón
+        val (level, xp) = storage.loadDragonProgress(type)
+
+        // Actualizamos únicamente nivel y experiencia
+        updateState(
+            _state.value.copy(
+                level = level,
+                xp = xp
+            )
+        )
+    }
+    fun getActiveSkin(): SkinType {
+
+        return activeSkin
+    }
+
+    fun setActiveSkin(type: SkinType) {
+
+        if (!storage.isSkinUnlocked(type)) return
+
+        activeSkin = type
+
+        storage.saveActiveSkin(type)
+    }
+
+    fun unlockSkin(type: SkinType) {
+
+        storage.saveSkinUnlocked(type, true)
+    }
+
+    fun isSkinUnlocked(type: SkinType): Boolean {
+
+        return storage.isSkinUnlocked(type)
+    }
+
+    fun isAuraEnabled(): Boolean {
+
+        return auraEnabled
+    }
+
+    fun setAuraEnabled(enabled: Boolean) {
+
+        auraEnabled = enabled
+
+        storage.saveAuraEnabled(enabled)
     }
 }

@@ -296,6 +296,7 @@ fun HomeScreen(
     var hudOffsetY by remember { mutableStateOf(0.dp) }
     var showResetWarning by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val activeSkin = engine.getActiveSkin()
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -697,12 +698,18 @@ fun HomeScreen(
             val rewardStorage = remember {
                 DragonStorage(context)
             }
+            LaunchedEffect(Unit) {
+                rewardStorage.saveAuraEnabled(true)
+                rewardStorage.saveSkinUnlocked(SkinType.SHINY, true)
+                rewardStorage.saveSkinUnlocked(SkinType.GOLD, true)
+            }
             val currentDragon = engine.getCurrentDragon()
-            val auraUnlocked = rewardStorage.hasAura()
-            val shinyUnlocked = rewardStorage.hasShiny()
+
+            val auraUnlocked = true      // temporal
+            val shinyUnlocked = true    // temporal
+            val goldUnlocked = true     // temporal
             val waterUnlocked = true
             val plantUnlocked = true
-            val goldenUnlocked = rewardStorage.hasGolden()
 
             Box(
                 modifier = Modifier
@@ -746,12 +753,61 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(
-                        text = if (auraUnlocked) "✅ Aura" else "🔒 Aura",
-                        color = Color.White
-                    )
-
                     Spacer(modifier = Modifier.height(10.dp))
+                    // ✨ AURA
+                    if (auraUnlocked) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = "✨ Aura",
+                                color = Color.White
+                            )
+
+                            if (engine.isAuraEnabled()) {
+
+                                Text(
+                                    text = "ACTIVA",
+                                    color = Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                            } else {
+
+                                TextButton(
+                                    onClick = {
+                                        engine.setAuraEnabled(
+                                            !engine.isAuraEnabled()
+                                        )
+                                    }
+                                ) {
+                                    Text(
+                                        if (engine.isAuraEnabled())
+                                            "DESACTIVAR"
+                                        else
+                                            "ACTIVAR"
+                                    )
+                                }
+
+                            }
+
+                        }
+
+                    } else {
+
+                        Text(
+                            text = "🔒 Aura",
+                            color = Color.White
+                        )
+
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
 
                     Text(
                         text = "────────────────────────────",
@@ -764,20 +820,94 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(
-                        text = if (shinyUnlocked) "✅ Skin Shiny" else "🔒 Skin Shiny",
-                        color = Color.White
-                    )
-
-
                     Spacer(modifier = Modifier.height(10.dp))
+                    // 🤍 NORMAL
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text = "🤍 Normal",
+                            color = Color.White
+                        )
+
+                        if (activeSkin == SkinType.NORMAL) {
+
+                            Text(
+                                text = "ACTIVA",
+                                color = Color(0xFF81C784),
+                                fontWeight = FontWeight.Bold
+                            )
+
+                        } else {
+
+                            TextButton(
+                                onClick = {
+                                    engine.setActiveSkin(SkinType.NORMAL)
+                                }
+                            ) {
+                                Text("USAR")
+                            }
+
+                        }
+
+                    }
+                    // 🌈 SHINY
+                    if (shinyUnlocked) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = "🌈 Shiny",
+                                color = Color.White
+                            )
+
+                            if (activeSkin == SkinType.SHINY) {
+
+                                Text(
+                                    text = "ACTIVA",
+                                    color = Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                            } else {
+
+                                TextButton(
+                                    onClick = {
+                                        engine.setActiveSkin(SkinType.SHINY)
+                                    }
+                                ) {
+                                    Text("USAR")
+                                }
+
+                            }
+
+                        }
+
+                    } else {
+
+                        Text(
+                            text = "🔒 Shiny",
+                            color = Color.White
+                        )
+
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
 
                     Text(
                         text = "────────────────────────────",
                         color = Color.DarkGray
                     )
                     Text(
-                        text = "──────── 🏺 DRAGONES ────────",
+                        text = "──────── 🏺 LEGENDARIAS ────────",
                         color = Color(0xFFFFB74D),
                         fontWeight = FontWeight.Bold
                     )
@@ -912,22 +1042,98 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    Text(
+                        text = "──────── ✨ SECRETA ────────",
+                        color = Color(0xFFFFB74D),
+                        fontWeight = FontWeight.Bold
+                    )
+
                     Spacer(modifier = Modifier.height(10.dp))
+
+                    // 🤍 NORMAL
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text = "🤍 Normal",
+                            color = Color.White
+                        )
+
+                        if (activeSkin == SkinType.NORMAL) {
+
+                            Text(
+                                text = "ACTIVA",
+                                color = Color(0xFF81C784),
+                                fontWeight = FontWeight.Bold
+                            )
+
+                        } else {
+
+                            TextButton(
+                                onClick = {
+                                    engine.setActiveSkin(SkinType.NORMAL)
+                                }
+                            ) {
+                                Text("USAR")
+                            }
+
+                        }
+
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // 👑 DORADA
+                    if (goldUnlocked) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = "👑 Dorada",
+                                color = Color.White
+                            )
+
+                            if (activeSkin == SkinType.GOLD) {
+
+                                Text(
+                                    text = "ACTIVA",
+                                    color = Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                            } else {
+
+                                TextButton(
+                                    onClick = {
+                                        engine.setActiveSkin(SkinType.GOLD)
+                                    }
+                                ) {
+                                    Text("USAR")
+                                }
+
+                            }
+
+                        }
+
+                    } else {
+
+                        Text(
+                            text = "🔒 Dorada",
+                            color = Color.White
+                        )
+
+                    }
 
                     Text(
                         text = "────────────────────────────",
                         color = Color.DarkGray
-                    )
-
-                    Text(
-                        "──────── 👑 SECRETAS ─────────",
-                        color = Color(0xFFFFF176),
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = if (goldenUnlocked) "👑 Skin Dorada" else "🔒 Skin Dorada",
-                        color = Color.White
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -1131,7 +1337,44 @@ fun HomeScreen(
                         },
                     colorFilter = ColorFilter.tint(Color.Black)
                 )
+                // ✨ AURA
+                if (engine.isAuraEnabled()) {
 
+                    Image(
+                        painter = painterResource(id = R.drawable.aura),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer {
+
+                                // 🔥 Tamaño base del aura
+                                val baseScale = 3f
+
+                                if (isBouncing) {
+
+                                    translationY = -22f - (bounceOffset * 30f)
+
+                                    val scale = baseScale + bounceOffset * 0.10f
+
+                                    scaleX = scale
+                                    scaleY = scale
+
+                                } else {
+
+                                    translationY = -22f
+
+                                    val scale = baseScale + breathOffset * 0.15f
+
+                                    scaleX = scale
+                                    scaleY = scale
+
+                                }
+
+                                alpha = 0.45f
+                            }
+                    )
+
+                }
                 // 🔥 GLOW (capa de atrás)
                 Image(
                     painter = painterResource(id = getDragonSprite(
