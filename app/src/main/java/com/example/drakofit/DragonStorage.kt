@@ -102,4 +102,67 @@ class DragonStorage(context: Context) {
     fun getLastCheckDate(): String {
         return prefs.getString("lastCheckDate", "") ?: ""
     }
+    // ---------------------------------------------------
+    // DRAGON SELECTION
+    // ---------------------------------------------------
+
+    fun saveCurrentDragon(type: DragonType) {
+
+        prefs.edit()
+            .putString("currentDragon", type.name)
+            .apply()
+    }
+
+    fun loadCurrentDragon(): DragonType {
+
+        val saved = prefs.getString(
+            "currentDragon",
+            DragonType.FIRE.name
+        ) ?: DragonType.FIRE.name
+
+        return DragonType.valueOf(saved)
+    }
+    // ---------------------------------------------------
+    // RECOMPENSAS
+    // ---------------------------------------------------
+
+    fun unlockAura() {
+        prefs.edit().putBoolean("reward_aura", true).apply()
+    }
+
+    fun hasAura(): Boolean {
+        return prefs.getBoolean("reward_aura", false)
+    }
+
+    fun unlockShiny() {
+        prefs.edit().putBoolean("reward_shiny", true).apply()
+    }
+
+    fun hasShiny(): Boolean {
+        return prefs.getBoolean("reward_shiny", false)
+    }
+
+    fun unlockGolden() {
+        prefs.edit().putBoolean("reward_golden", true).apply()
+    }
+
+    fun hasGolden(): Boolean {
+        return prefs.getBoolean("reward_golden", false)
+    }
+
+    fun unlockWaterDragon() {
+        prefs.edit().putBoolean("reward_water", true).apply()
+    }
+
+    fun hasWaterDragon(): Boolean {
+        return prefs.getBoolean("reward_water", false)
+    }
+
+    fun unlockPlantDragon() {
+        prefs.edit().putBoolean("reward_plant", true).apply()
+    }
+
+    fun hasPlantDragon(): Boolean {
+        return prefs.getBoolean("reward_plant", false)
+    }
 }

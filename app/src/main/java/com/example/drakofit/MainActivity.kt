@@ -387,6 +387,9 @@ fun HomeScreen(
         }
         // Boton Menu
         var showMenu by remember { mutableStateOf(false) }
+        var showRewards by remember {
+            mutableStateOf(false)
+        }
         var showResetWarning by remember { mutableStateOf(false) }
         var showHistory by remember {
             mutableStateOf(false)
@@ -440,8 +443,9 @@ fun HomeScreen(
                         }
                     ) {
                         Text(
-                            text = "Resetear dragón",
-                            color = Color.Red
+                            text = "↻ Resetear dragón",
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
 
@@ -459,14 +463,26 @@ fun HomeScreen(
 
                     TextButton(
                         onClick = {
+                            showRewards = true
+                            showMenu = false
+                        }
+                    ) {
+                        Text(
+                            text = "🏆 Recompensas",
+                            color = Color.White
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
                             engine.setMapDarkMode(!engine.state.value.isMapDarkMode)
                         }
                     ) {
                         Text(
                             text = if (engine.state.value.isMapDarkMode)
-                                "Mapa: Modo Oscuro"
+                                "\uD83C\uDF19 Mapa: Modo Oscuro"
                             else
-                                "Mapa: Modo Claro",
+                                "☀\uFE0F Mapa: Modo Claro",
                             color = Color.White
                         )
                     }
@@ -477,8 +493,9 @@ fun HomeScreen(
                         }
                     ) {
                         Text(
-                            text = "Cerrar",
-                            color = Color.White
+                            text = "❌  Cerrar",
+                            color = Color.White,
+                            fontFamily = cinzel
                         )
                     }
                 }
@@ -676,6 +693,257 @@ fun HomeScreen(
             }
         }
 
+        if (showRewards) {
+            val rewardStorage = remember {
+                DragonStorage(context)
+            }
+            val currentDragon = engine.getCurrentDragon()
+            val auraUnlocked = rewardStorage.hasAura()
+            val shinyUnlocked = rewardStorage.hasShiny()
+            val waterUnlocked = true
+            val plantUnlocked = true
+            val goldenUnlocked = rewardStorage.hasGolden()
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(100f)
+                    .background(Color.Black.copy(alpha = 0.75f)),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .background(Color(0xFF222222))
+                        .padding(24.dp)
+                        .width(320.dp)
+                ) {
+
+                    Text(
+                        text = "🏆 RECOMPENSAS",
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Desbloquea nuevas apariencias\nrealizando actividades.",
+                        color = Color.LightGray
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = "────────────────────────────",
+                        color = Color.DarkGray
+                    )
+
+                    Text(
+                        "──────── ✨ COMUNES ─────────",
+                        color = Color(0xFFFFD54F),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = if (auraUnlocked) "✅ Aura" else "🔒 Aura",
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "────────────────────────────",
+                        color = Color.DarkGray
+                    )
+
+                    Text(
+                        "──────── 💎 RARAS ─────────",
+                        color = Color(0xFF81D4FA),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = if (shinyUnlocked) "✅ Skin Shiny" else "🔒 Skin Shiny",
+                        color = Color.White
+                    )
+
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "────────────────────────────",
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        text = "──────── 🏺 DRAGONES ────────",
+                        color = Color(0xFFFFB74D),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text = "🐉 Dragón Fuego",
+                            color = Color.White
+                        )
+
+                        if (currentDragon == DragonType.FIRE) {
+
+                            Text(
+                                text = "ACTIVO",
+                                color = Color(0xFF81C784),
+                                fontWeight = FontWeight.Bold
+                            )
+
+                        } else {
+
+                            TextButton(
+                                onClick = {
+                                    engine.setCurrentDragon(DragonType.FIRE)
+                                }
+                            ) {
+
+                                Text("USAR")
+
+                            }
+
+                        }
+                    }
+
+                    if (waterUnlocked) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = "🐉 Dragón Agua",
+                                color = Color.White
+                            )
+
+                            if (currentDragon == DragonType.WATER) {
+
+                                Text(
+                                    text = "ACTIVO",
+                                    color = Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                            } else {
+
+                                TextButton(
+                                    onClick = {
+                                        engine.setCurrentDragon(DragonType.WATER)
+                                    }
+                                ) {
+
+                                    Text("USAR")
+
+                                }
+
+                            }
+
+                        }
+
+                    } else {
+
+                        Text(
+                            text = "🔒 Dragón Agua",
+                            color = Color.White
+                        )
+
+                    }
+
+                    if (plantUnlocked) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = "🐉 Dragón Planta",
+                                color = Color.White
+                            )
+
+                            if (currentDragon == DragonType.PLANT) {
+
+                                Text(
+                                    text = "ACTIVO",
+                                    color = Color(0xFF81C784),
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                            } else {
+
+                                TextButton(
+                                    onClick = {
+                                        engine.setCurrentDragon(DragonType.PLANT)
+                                    }
+                                ) {
+
+                                    Text("USAR")
+
+                                }
+
+                            }
+
+                        }
+
+                    } else {
+
+                        Text(
+                            text = "🔒 Dragón Planta",
+                            color = Color.White
+                        )
+
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "────────────────────────────",
+                        color = Color.DarkGray
+                    )
+
+                    Text(
+                        "──────── 👑 SECRETAS ─────────",
+                        color = Color(0xFFFFF176),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = if (goldenUnlocked) "👑 Skin Dorada" else "🔒 Skin Dorada",
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        onClick = {
+                            showRewards = false
+                        }
+                    ) {
+                        Text("Cerrar")
+                    }
+                }
+            }
+        }
+
         // 📱 CONTENIDO UI
         Column(
             modifier = Modifier
@@ -836,7 +1104,10 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = getDragonSprite(state.level)),
+                    painter = painterResource(id = getDragonSprite(
+                        engine.getCurrentDragon(),
+                        state.level
+                    )),
                     contentDescription = null,
                     modifier = Modifier
                         .matchParentSize()
@@ -863,7 +1134,10 @@ fun HomeScreen(
 
                 // 🔥 GLOW (capa de atrás)
                 Image(
-                    painter = painterResource(id = getDragonSprite(state.level)),
+                    painter = painterResource(id = getDragonSprite(
+                        engine.getCurrentDragon(),
+                        state.level
+                    )),
                     contentDescription = null,
                     modifier = Modifier
                         .matchParentSize()
@@ -882,7 +1156,10 @@ fun HomeScreen(
 
                 // 🐉 DRAGÓN PRINCIPAL (capa delante)
                 Image(
-                    painter = painterResource(id = getDragonSprite(state.level)),
+                    painter = painterResource(id = getDragonSprite(
+                        engine.getCurrentDragon(),
+                        state.level
+                    )),
                     contentDescription = "Drako",
                     modifier = Modifier
                         .matchParentSize()

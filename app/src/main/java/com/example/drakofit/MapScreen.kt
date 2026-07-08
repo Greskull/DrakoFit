@@ -382,7 +382,10 @@ fun MapScreen(
                         val dragonBitmap =
                             BitmapFactory.decodeResource(
                                 context.resources,
-                                getDragonSprite(engine.getState().level)
+                                getDragonSprite(
+                                    engine.getCurrentDragon(),
+                                    engine.getState().level
+                                )
                             )
 
                         style.addImage("dragon-icon", dragonBitmap)

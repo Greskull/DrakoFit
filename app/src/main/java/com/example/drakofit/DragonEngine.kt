@@ -10,6 +10,9 @@ import kotlin.math.roundToInt
 class DragonEngine(context: Context) {
 
     private val storage = DragonStorage(context)
+    //Función distintos dragones
+    private var currentDragon =
+        storage.loadCurrentDragon()
 
     // 🔥 ESTADO ÚNICO
     private val _state = mutableStateOf(
@@ -233,5 +236,18 @@ class DragonEngine(context: Context) {
         } else {
             resetDaily
         }
+    }
+    //Funciones para distintos dragones
+
+    fun getCurrentDragon(): DragonType {
+
+        return currentDragon
+    }
+
+    fun setCurrentDragon(type: DragonType) {
+
+        currentDragon = type
+
+        storage.saveCurrentDragon(type)
     }
 }
