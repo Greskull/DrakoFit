@@ -181,18 +181,26 @@ fun MapScreen(
                     pace = getPace(km, getElapsedTime()),
 
                     xpEarned = sessionSteps / 100
+
                 )
 
                 routeHistoryStorage.saveRoute(route)
 
-                engine.onValidActivityCompleted()
+                // 🎁 Solo las actividades completamente válidas generan recompensas
+                if (finishReason == FinishReason.NORMAL) {
+
+                    engine.onValidActivityCompleted()
+
+                }
 
                 delay(5000)
 
                 onFinish(distanceMeters)
+
             }
 
             null -> return@LaunchedEffect
+
         }
     }
 
