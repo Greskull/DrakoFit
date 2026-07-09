@@ -60,38 +60,131 @@ fun getDragonSprite(
         }
     }
 }
+
 fun getDragonColorFilter(
-    dragon: DragonType,
-    skin: SkinType
+    skin: SkinType,
+    dragon: DragonType
 ): ColorFilter? {
 
-    return when (skin) {
+    if (skin == SkinType.NORMAL)
+        return null
 
-        SkinType.NORMAL,
+    val matrix = when (skin) {
 
         SkinType.GOLD -> {
 
-            val matrix = ColorMatrix(
-                floatArrayOf(
+            when (dragon) {
 
-                    // RED
-                    1.15f, 0.15f, 0f, 0f, 25f,
+                DragonType.FIRE -> ColorMatrix(
 
-                    // GREEN
-                    0.10f, 1.05f, 0f, 0f, 18f,
+                    floatArrayOf(
 
-                    // BLUE
-                    0f, 0f, 0.65f, 0f, -12f,
+                        // R
+                        1.10f, 0.15f, 0.00f, 0f, 8f,
 
-                    // ALPHA
-                    0f, 0f, 0f, 1f, 0f
+                        // G
+                        0.18f, 1.00f, 0.00f, 0f, 6f,
 
+                        // B
+                        0.00f, 0.00f, 0.60f, 0f, -4f,
+
+                        // A
+                        0f, 0f, 0f, 1f, 0f
+                    )
                 )
-            )
+                DragonType.WATER -> ColorMatrix(
 
-            ColorFilter.colorMatrix(matrix)
+                    floatArrayOf(
+
+                        // R
+                        1.00f, 0.15f, 0.25f, 0f, 10f,
+
+                        // G
+                        0.05f, 1.00f, 0.15f, 0f, 8f,
+
+                        // B
+                        0.00f, 0.00f, 0.35f, 0f, -8f,
+
+                        // A
+                        0f, 0f, 0f, 1f, 0f
+                    )
+                )
+                DragonType.PLANT -> ColorMatrix(
+
+                    floatArrayOf(
+
+                        // R
+                        1.10f, 0.35f, 0.00f, 0f, 10f,
+
+                        // G
+                        0.10f, 1.00f, 0.00f, 0f, 8f,
+
+                        // B
+                        0.00f, 0.00f, 0.40f, 0f, -8f,
+
+                        // A
+                        0f, 0f, 0f, 1f, 0f
+                    )
+                )
+            }
         }
 
-        SkinType.SHINY -> null
+        SkinType.SHINY -> {
+
+            when (dragon) {
+
+                DragonType.FIRE -> ColorMatrix(
+                    floatArrayOf(
+
+                        // R
+                        0.65f, 0.20f, 0.00f, 0f, -12f,
+
+                        // G
+                        0.18f, 0.45f, 0.00f, 0f, -10f,
+
+                        // B
+                        0.00f, 0.00f, 0.18f, 0f, -18f,
+
+                        // A
+                        0f, 0f, 0f, 1f, 0f
+
+                    )
+                )
+                DragonType.WATER -> ColorMatrix(
+                    floatArrayOf(
+
+                        // R
+                        0.85f, 0.10f, 0.15f, 0f, 0f,
+
+                        // G
+                        0.10f, 1.15f, 0.20f, 0f, 10f,
+
+                        // B
+                        0.00f, 0.10f, 1.05f, 0f, 5f,
+
+                        // A
+                        0f, 0f, 0f, 1f, 0f
+                    )
+                )
+                DragonType.PLANT -> ColorMatrix(
+                    floatArrayOf(
+
+                        // R
+                        0.70f, 0.18f, 0.00f, 0f, -8f,
+
+                        // G
+                        0.15f, 0.95f, 0.00f, 0f, -4f,
+
+                        // B
+                        0.00f, 0.00f, 0.22f, 0f, -18f,
+
+                        // A
+                        0f, 0f, 0f, 1f, 0f
+                    )
+                )
+            }
+        }
+        else -> return null
     }
+    return ColorFilter.colorMatrix(matrix)
 }

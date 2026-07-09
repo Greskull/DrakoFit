@@ -1310,10 +1310,12 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = getDragonSprite(
-                        engine.getCurrentDragon(),
-                        state.level
-                    )),
+                    painter = painterResource(
+                        id = getDragonSprite(
+                            engine.getCurrentDragon(),
+                            state.level
+                        )
+                    ),
                     contentDescription = null,
                     modifier = Modifier
                         .matchParentSize()
@@ -1323,17 +1325,22 @@ fun HomeScreen(
                             translationY = 60f
 
                             if (isBouncing) {
+
                                 // 🦘 sombra se comprime al saltar
                                 scaleX = 1f - (bounceOffset * 0.25f)
                                 scaleY = 1f - (bounceOffset * 0.25f)
                                 alpha = 0.15f
+
                             } else {
+
                                 // 🌬️ respiración suave
                                 val scale = 1f + breathOffset * 0.3f
                                 scaleX = scale
                                 scaleY = scale
                                 alpha = 0.2f
+
                             }
+
                         },
                     colorFilter = ColorFilter.tint(Color.Black)
                 )
@@ -1399,11 +1406,17 @@ fun HomeScreen(
 
                 // 🐉 DRAGÓN PRINCIPAL (capa delante)
                 Image(
-                    painter = painterResource(id = getDragonSprite(
-                        engine.getCurrentDragon(),
-                        state.level
-                    )),
+                    painter = painterResource(
+                        id = getDragonSprite(
+                            engine.getCurrentDragon(),
+                            state.level
+                        )
+                    ),
                     contentDescription = "Drako",
+                    colorFilter = getDragonColorFilter(
+                        engine.getActiveSkin(),
+                        engine.getCurrentDragon()
+                    ),
                     modifier = Modifier
                         .matchParentSize()
                         .graphicsLayer {
@@ -1421,7 +1434,9 @@ fun HomeScreen(
                                 val scale = 1f + breathOffset
                                 scaleX = scale
                                 scaleY = scale
+
                             }
+
                         }
                 )
             }
