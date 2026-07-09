@@ -208,6 +208,26 @@ class DragonStorage(context: Context) {
 
         return Pair(level, xp)
     }
+
+    fun saveDragonUnlocked(
+        type: DragonType,
+        unlocked: Boolean
+    ) {
+
+        prefs.edit()
+            .putBoolean("dragon_${type.name}", unlocked)
+            .apply()
+
+    }
+
+    fun isDragonUnlocked(type: DragonType): Boolean {
+
+        return prefs.getBoolean(
+            "dragon_${type.name}",
+            type == DragonType.FIRE
+        )
+
+    }
     // -------------------------
     // SKINS
     // -------------------------
@@ -251,6 +271,22 @@ class DragonStorage(context: Context) {
             "auraEnabled",
             false
         )
+    }
+    fun saveAuraUnlocked(unlocked: Boolean) {
+
+        prefs.edit()
+            .putBoolean("auraUnlocked", unlocked)
+            .apply()
+
+    }
+
+    fun isAuraUnlocked(): Boolean {
+
+        return prefs.getBoolean(
+            "auraUnlocked",
+            false
+        )
+
     }
 
     fun saveSkinUnlocked(

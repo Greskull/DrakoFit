@@ -32,7 +32,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.*
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
-import android.util.Log
+import androidx.compose.ui.text.font.FontWeight
 
 enum class FinishReason {
     NORMAL,
@@ -55,6 +55,7 @@ fun MapScreen(
     var finishReason by remember { mutableStateOf<FinishReason?>(null) }
     val scale = remember { Animatable(0.6f) }
     val alpha = remember { Animatable(0f) }
+    val rewardUnlocked = engine.wasRewardUnlocked()
     var lastValidPoint: Point? by remember { mutableStateOf(null) }
     var invalidGpsStreak by remember { mutableStateOf(0) }
 
@@ -183,6 +184,8 @@ fun MapScreen(
                 )
 
                 routeHistoryStorage.saveRoute(route)
+
+                engine.onValidActivityCompleted()
 
                 delay(5000)
 
@@ -696,6 +699,18 @@ fun MapScreen(
                         color = Color.White.copy(alpha = alpha.value),
                         fontSize = 16.sp
                     )
+                    if (rewardUnlocked) {
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "🎁 ¡Recompensa desbloqueada!",
+                            color = Color(0xFFFFD54F).copy(alpha = alpha.value),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                    }
                 }
             }
         }

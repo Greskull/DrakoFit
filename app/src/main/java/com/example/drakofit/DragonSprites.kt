@@ -137,13 +137,13 @@ fun getDragonColorFilter(
                     floatArrayOf(
 
                         // R
-                        0.65f, 0.20f, 0.00f, 0f, -12f,
+                        0.45f, 0.15f, 0.00f, 0f, -18f,
 
                         // G
-                        0.18f, 0.45f, 0.00f, 0f, -10f,
+                        0.40f, 0.90f, 0.10f, 0f, -6f,
 
                         // B
-                        0.00f, 0.00f, 0.18f, 0f, -18f,
+                        0.00f, 0.05f, 0.65f, 0f, -12f,
 
                         // A
                         0f, 0f, 0f, 1f, 0f

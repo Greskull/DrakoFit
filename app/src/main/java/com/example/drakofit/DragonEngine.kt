@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import java.time.LocalDate
 import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 class DragonEngine(context: Context) {
 
@@ -15,6 +16,7 @@ class DragonEngine(context: Context) {
         storage.loadCurrentDragon()
     private var activeSkin = storage.loadActiveSkin()
     private var auraEnabled = storage.loadAuraEnabled()
+    private var rewardUnlocked = false
 
     // 🔥 ESTADO ÚNICO
     private val _state = mutableStateOf(
@@ -74,6 +76,106 @@ class DragonEngine(context: Context) {
             newState.level,
             newState.xp
         )
+        checkGoldUnlock()
+    }
+
+    fun onValidActivityCompleted() {
+
+        tryUnlockReward()
+
+    }
+    fun wasRewardUnlocked(): Boolean {
+
+        return rewardUnlocked
+
+    }
+
+    private fun tryUnlockReward() {
+
+        rewardUnlocked = false
+
+        val roll = Random.nextInt(100)
+
+        when {
+
+            // ⭐ 15% Aura
+            roll < 15 -> {
+
+                if (!storage.isAuraUnlocked()) {
+
+                    storage.saveAuraUnlocked(true)
+
+                    setAuraEnabled(true)
+
+                    rewardUnlocked = true
+
+                }
+
+            }
+
+            // 💎 7% Skin Shiny
+            roll < 22 -> {
+
+                if (!storage.isSkinUnlocked(SkinType.SHINY)) {
+
+                    storage.saveSkinUnlocked(
+                        SkinType.SHINY,
+                        true
+                    )
+                    rewardUnlocked = true
+                }
+
+            }
+
+            // 🏺 3% Dragones
+            roll < 25 -> {
+
+                if (!storage.isDragonUnlocked(DragonType.WATER)) {
+
+                    storage.saveDragonUnlocked(
+                        DragonType.WATER,
+                        true
+                    )
+                    rewardUnlocked = true
+
+                } else if (!storage.isDragonUnlocked(DragonType.PLANT)) {
+
+                    storage.saveDragonUnlocked(
+                        DragonType.PLANT,
+                        true
+                    )
+                    rewardUnlocked = true
+                }
+
+            }
+
+        }
+
+    }
+    private fun checkGoldUnlock() {
+
+        val fireLevel =
+            storage.loadDragonProgress(DragonType.FIRE).first
+
+        val waterLevel =
+            storage.loadDragonProgress(DragonType.WATER).first
+
+        val plantLevel =
+            storage.loadDragonProgress(DragonType.PLANT).first
+
+        if (
+            fireLevel >= 14 &&
+            waterLevel >= 14 &&
+            plantLevel >= 14
+        ) {
+
+            storage.saveSkinUnlocked(
+                SkinType.GOLD,
+                true
+            )
+            rewardUnlocked = true
+        }
+
     }
 
     fun resetDragon() {
@@ -258,6 +360,8 @@ class DragonEngine(context: Context) {
 
         // Si ya está seleccionado, no hacemos nada
         if (type == currentDragon) return
+        // Si aún no está desbloqueado, no hacemos nada
+        if (!storage.isDragonUnlocked(type)) return
 
         // Guardamos el progreso del dragón actual
         storage.saveDragonProgress(
@@ -280,6 +384,17 @@ class DragonEngine(context: Context) {
                 xp = xp
             )
         )
+    }
+    fun unlockDragon(type: DragonType) {
+
+        storage.saveDragonUnlocked(type, true)
+
+    }
+
+    fun isDragonUnlocked(type: DragonType): Boolean {
+
+        return storage.isDragonUnlocked(type)
+
     }
     fun getActiveSkin(): SkinType {
 
@@ -308,6 +423,9 @@ class DragonEngine(context: Context) {
     fun isAuraEnabled(): Boolean {
 
         return auraEnabled
+    }
+    fun isAuraUnlocked(): Boolean {
+        return storage.isAuraUnlocked()
     }
 
     fun setAuraEnabled(enabled: Boolean) {

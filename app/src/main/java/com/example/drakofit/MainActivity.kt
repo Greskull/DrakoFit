@@ -695,21 +695,22 @@ fun HomeScreen(
         }
 
         if (showRewards) {
-            val rewardStorage = remember {
-                DragonStorage(context)
-            }
-            LaunchedEffect(Unit) {
-                rewardStorage.saveAuraEnabled(true)
-                rewardStorage.saveSkinUnlocked(SkinType.SHINY, true)
-                rewardStorage.saveSkinUnlocked(SkinType.GOLD, true)
-            }
+
             val currentDragon = engine.getCurrentDragon()
 
-            val auraUnlocked = true      // temporal
-            val shinyUnlocked = true    // temporal
-            val goldUnlocked = true     // temporal
-            val waterUnlocked = true
-            val plantUnlocked = true
+            val auraUnlocked = engine.isAuraUnlocked()
+
+            val shinyUnlocked =
+                engine.isSkinUnlocked(SkinType.SHINY)
+
+            val goldUnlocked =
+                engine.isSkinUnlocked(SkinType.GOLD)
+
+            val waterUnlocked =
+                engine.isDragonUnlocked(DragonType.WATER)
+
+            val plantUnlocked =
+                engine.isDragonUnlocked(DragonType.PLANT)
 
             Box(
                 modifier = Modifier
@@ -730,6 +731,7 @@ fun HomeScreen(
                         text = "🏆 RECOMPENSAS",
                         color = Color.White,
                         fontSize = 22.sp,
+                        fontFamily = cinzel,
                         fontWeight = FontWeight.Bold
                     )
 
@@ -768,30 +770,20 @@ fun HomeScreen(
                                 color = Color.White
                             )
 
-                            if (engine.isAuraEnabled()) {
-
-                                Text(
-                                    text = "ACTIVA",
-                                    color = Color(0xFF81C784),
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                            } else {
-
-                                TextButton(
-                                    onClick = {
-                                        engine.setAuraEnabled(
-                                            !engine.isAuraEnabled()
-                                        )
-                                    }
-                                ) {
-                                    Text(
-                                        if (engine.isAuraEnabled())
-                                            "DESACTIVAR"
-                                        else
-                                            "ACTIVAR"
+                            TextButton(
+                                onClick = {
+                                    engine.setAuraEnabled(
+                                        !engine.isAuraEnabled()
                                     )
                                 }
+                            ) {
+
+                                Text(
+                                    if (engine.isAuraEnabled())
+                                        "DESACTIVAR"
+                                    else
+                                        "ACTIVAR"
+                                )
 
                             }
 
@@ -908,7 +900,7 @@ fun HomeScreen(
                     )
                     Text(
                         text = "──────── 🏺 LEGENDARIAS ────────",
-                        color = Color(0xFFFFB74D),
+                        color = Color(0xFF9C4DFF),
                         fontWeight = FontWeight.Bold
                     )
 
