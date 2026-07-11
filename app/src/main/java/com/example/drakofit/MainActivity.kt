@@ -406,7 +406,7 @@ fun HomeScreen(
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "Menú",
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(36.dp)
             )
         }
 

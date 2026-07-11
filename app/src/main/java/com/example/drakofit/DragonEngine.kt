@@ -94,8 +94,9 @@ class DragonEngine(context: Context) {
 
         rewardUnlocked = false
 
-        val roll = Random.nextInt(100)
+        val maxRoll = if (_state.value.happiness == 7) 95 else 100
 
+        val roll = Random.nextInt(maxRoll)
         when {
 
             // ⭐ 15% Aura

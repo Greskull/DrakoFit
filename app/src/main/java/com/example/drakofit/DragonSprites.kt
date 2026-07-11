@@ -134,21 +134,23 @@ fun getDragonColorFilter(
             when (dragon) {
 
                 DragonType.FIRE -> ColorMatrix(
+
                     floatArrayOf(
 
                         // R
-                        0.45f, 0.15f, 0.00f, 0f, -18f,
+                        1.10f, 0.12f, 0.12f, 0f, 10f,
 
                         // G
-                        0.40f, 0.90f, 0.10f, 0f, -6f,
+                        0.05f, 0.70f, 0.20f, 0f, -8f,
 
                         // B
-                        0.00f, 0.05f, 0.65f, 0f, -12f,
+                        0.35f, 0.05f, 1.10f, 0f, 18f,
 
                         // A
                         0f, 0f, 0f, 1f, 0f
 
                     )
+
                 )
                 DragonType.WATER -> ColorMatrix(
                     floatArrayOf(

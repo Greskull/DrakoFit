@@ -92,6 +92,14 @@ fun MapScreen(
 
     val routePoints = remember { mutableStateListOf<Point>() }
 
+    var mapViewRef by remember {
+        mutableStateOf<MapView?>(null)
+    }
+
+    var locationCallback by remember {
+        mutableStateOf<LocationCallback?>(null)
+    }
+
     val fusedClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
@@ -242,7 +250,7 @@ fun MapScreen(
             3500
         ).build()
 
-        val callback = object : LocationCallback() {
+        locationCallback = object : LocationCallback() {
 
             override fun onLocationResult(result: LocationResult) {
 
@@ -337,11 +345,13 @@ fun MapScreen(
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedClient.requestLocationUpdates(
-                request,
-                callback,
-                context.mainLooper
-            )
+            locationCallback?.let {
+                fusedClient.requestLocationUpdates(
+                    request,
+                    it,
+                    context.mainLooper
+                )
+            }
         }
     }
 
@@ -353,6 +363,8 @@ fun MapScreen(
             factory = { ctx ->
 
                 val mapView = MapView(ctx)
+
+                mapViewRef = mapView
 
                 mapView.onCreate(null)
                 mapView.onStart()
@@ -483,6 +495,24 @@ fun MapScreen(
                 mapView
             }
         )
+
+        DisposableEffect(Unit) {
+
+            onDispose {
+
+                locationCallback?.let {
+                    fusedClient.removeLocationUpdates(it)
+                }
+
+                mapViewRef?.onPause()
+                mapViewRef?.onStop()
+                mapViewRef?.onDestroy()
+
+                mapRef.value = null
+                mapViewRef = null
+                locationCallback = null
+            }
+        }
 
         // ⚙️ BOTÓN AJUSTES
 
@@ -713,8 +743,8 @@ fun MapScreen(
 
                         Text(
                             text = "🎁 ¡Recompensa desbloqueada!",
-                            color = Color(0xFFFFD54F).copy(alpha = alpha.value),
-                            fontSize = 18.sp,
+                            color = Color(0xFFE53935).copy(alpha = alpha.value),
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.Bold
                         )
 
