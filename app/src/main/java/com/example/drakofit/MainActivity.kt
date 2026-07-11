@@ -85,6 +85,7 @@ import org.maplibre.android.geometry.LatLng
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import android.content.Context
 
 private const val MIN_INTERVAL_MS = 800L
 
@@ -296,7 +297,23 @@ fun HomeScreen(
     var hudOffsetY by remember { mutableStateOf(0.dp) }
     var showResetWarning by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val prefs = context.getSharedPreferences("drakofit_prefs", Context.MODE_PRIVATE)
+
+    var currentBackground by remember {
+        mutableStateOf(
+            prefs.getInt("current_background", 1)
+        )
+    }
     val activeSkin = engine.getActiveSkin()
+    // Boton Menu
+    var showMenu by remember { mutableStateOf(false) }
+    var showRewards by remember {
+        mutableStateOf(false)
+    }
+    var showHistory by remember {
+        mutableStateOf(false)
+    }
+
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -348,8 +365,15 @@ fun HomeScreen(
     ) {
 
         // 🖼️ FONDO
+        val backgroundImage = when (currentBackground) {
+            2 -> R.drawable.background_homescreen_2
+            3 -> R.drawable.background_homescreen_3
+            4 -> R.drawable.background_homescreen_4
+            5 -> R.drawable.background_homescreen_5
+            else -> R.drawable.background_homescreen
+        }
         Image(
-            painter = painterResource(id = R.drawable.background_homescreen),
+            painterResource(backgroundImage),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -385,15 +409,6 @@ fun HomeScreen(
                     fontSize = 28.sp
                 )
             }
-        }
-        // Boton Menu
-        var showMenu by remember { mutableStateOf(false) }
-        var showRewards by remember {
-            mutableStateOf(false)
-        }
-        var showResetWarning by remember { mutableStateOf(false) }
-        var showHistory by remember {
-            mutableStateOf(false)
         }
 
         // Botón Menu
@@ -448,6 +463,44 @@ fun HomeScreen(
                             color = Color.Red,
                             fontWeight = FontWeight.Bold,
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "🖼 Fondo:",
+                        color = Color.White
+                    )
+
+                    Row {
+
+                        for (i in 1..5) {
+
+                            TextButton(
+                                onClick = {
+
+                                    currentBackground = i
+
+                                    prefs.edit()
+                                        .putInt("current_background", i)
+                                        .apply()
+
+                                }
+                            ) {
+
+                                Text(
+                                    text = "[$i]",
+                                    color =
+                                        if (currentBackground == i)
+                                            Color(0xFFFFD54F)
+                                        else
+                                            Color.White
+                                )
+
+                            }
+
+                        }
+
                     }
 
                     TextButton(
