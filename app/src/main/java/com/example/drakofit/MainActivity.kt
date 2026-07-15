@@ -421,6 +421,7 @@ fun HomeScreen(
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "Menú",
+                tint = Color(0xFFD4AF37),
                 modifier = Modifier.size(36.dp)
             )
         }
