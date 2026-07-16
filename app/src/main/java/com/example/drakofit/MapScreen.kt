@@ -195,7 +195,12 @@ fun MapScreen(
                 routeHistoryStorage.saveRoute(route)
 
                 // 🎁 Solo las actividades completamente válidas generan recompensas
-                if (finishReason == FinishReason.NORMAL) {
+                val validRoute = routeHistoryStorage.saveRoute(route)
+
+                if (
+                    finishReason == FinishReason.NORMAL &&
+                    validRoute
+                ) {
 
                     engine.onValidActivityCompleted()
 
@@ -554,15 +559,31 @@ fun MapScreen(
             contentAlignment = Alignment.TopCenter
         ) {
 
-            Surface(
-                color = Color(0xAA000000),
-                shape = RoundedCornerShape(50)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = formatTime(getElapsedTime()),
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(12.dp)
+
+                // Cronómetro (igual que antes)
+                Surface(
+                    color = Color(0xAA000000),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        text = formatTime(getElapsedTime()),
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(
+                            horizontal = 18.dp,
+                            vertical = 10.dp
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Banner independiente
+                AdBanner(
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

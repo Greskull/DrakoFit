@@ -86,6 +86,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import android.content.Context
+import com.google.android.gms.ads.MobileAds
 
 private const val MIN_INTERVAL_MS = 800L
 
@@ -160,6 +161,7 @@ class MainActivity : ComponentActivity() {
         org.maplibre.android.MapLibre.getInstance(this)
 
         engine = DragonEngine(this)
+        MobileAds.initialize(this)
 
         // 🔥 IMPORTANTE: solo después de crear engine
         engine.checkDailyStatus()

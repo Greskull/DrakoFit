@@ -17,13 +17,13 @@ class RouteHistoryStorage(context: Context) {
     // GUARDA UNA NUEVA RUTA
     // =====================================================
 
-    fun saveRoute(route: RouteHistoryEntry) {
+    fun saveRoute(route: RouteHistoryEntry): Boolean {
         // Ignorar rutas demasiado cortas
         if (
             route.steps < 500 ||
             route.durationSeconds < 250
         ) {
-            return
+            return false
         }
 
         val routes = loadRoutes().toMutableList()
@@ -58,6 +58,8 @@ class RouteHistoryStorage(context: Context) {
         }
 
         editor.apply()
+
+        return true
     }
 
     fun getRecentRoutes(): List<RouteHistoryEntry> {
