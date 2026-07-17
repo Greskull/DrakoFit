@@ -22,7 +22,7 @@ fun AdBanner(
                 setAdSize(AdSize.BANNER)
 
                 adUnitId =
-                    "ca-app-pub-3940256099942544/6300978111"
+                    "ca-app-pub-6505324142339269/2753018352"
 
                 loadAd(
                     AdRequest.Builder().build()
