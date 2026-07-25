@@ -149,7 +149,11 @@ class DragonEngine(context: Context) {
         val todayDate = LocalDate.now()
         val today = todayDate.toString()
 
-        val lastActivity = LocalDate.parse(old.lastActivityDate)
+        val lastActivity = try {
+            LocalDate.parse(old.lastActivityDate)
+        } catch (e: Exception) {
+            todayDate
+        }
 
         val isNewDay = old.lastDailyCheckDate != today
 
@@ -162,7 +166,9 @@ class DragonEngine(context: Context) {
                 activityRegisteredToday = false,
                 lastDailyCheckDate = today
             )
-        } else old
+        } else {
+            old
+        }
 
         return if (missedDay) {
             resetDaily.copy(
