@@ -1,0 +1,31 @@
+[33mabd79b4[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{0}: commit: Arreglo de filtro recompensas y AÑADIDA BARRA ANUNCIO
+[33m2056eed[m HEAD@{1}: commit: Arreglo de filtro recompensas y AÑADIDA BARRA ANUNCIO
+[33m07b7314[m HEAD@{2}: commit: POSIBLE arreglo de bug GPS que terminaba solo + menu en dorado
+[33m736ac15[m HEAD@{3}: commit: POSIBLE arreglo de bug GPS que terminaba solo + menu BACKGROUNDs
+[33mf42e9d5[m HEAD@{4}: commit: POSIBLE arreglo de bug GPS que terminaba solo
+[33md6427a1[m HEAD@{5}: commit: rewards funcionando,salto GPS sus no da rewards. beta 1.0 lista
+[33mea0773e[m HEAD@{6}: commit: rewards funcionando, beta 1.0 lista
+[33m9dd510d[m HEAD@{7}: commit: rewards funcionando, pendiente de agregar formula y modificar aura shiny rojo
+[33me94c2ec[m HEAD@{8}: commit: dragones y aura funcionando, pendiente de añadir skins
+[33m018f925[m HEAD@{9}: commit: MEnu recompensas y cambio entre dragones beta
+[33m86e7eac[m HEAD@{10}: commit: Historial de rutas BETA añadido
+[33m06e0218[m HEAD@{11}: commit: Dark mode mapscreen & filtro homescreen
+[33mcacbff6[m HEAD@{12}: commit: Dark mode añadido
+[33macd380c[m HEAD@{13}: commit: Backup antes de eliminar ActivityScreen
+[33ma9c3fec[m HEAD@{14}: commit: bonus exp & rewards,icono ajustes y funcion reinicio
+[33mdd4604d[m HEAD@{15}: commit: Alpha 1.1 - Escudo medalla nivel y tamaño sprite
+[33mecbbf7f[m[33m ([m[1;32mbackground-service[m[33m)[m HEAD@{16}: checkout: moving from background-service to ecbbf7f
+[33mecbbf7f[m[33m ([m[1;32mbackground-service[m[33m)[m HEAD@{17}: commit: Alpha 1.1 - filtro GPS y felicidad arregladas
+[33mfe1301a[m HEAD@{18}: commit: Alpha 1.1 - Menu ajustes UI y no-landscape
+[33m04f1862[m HEAD@{19}: commit: Alpha 1.0 estable - soporte para instalaciones nuevas
+[33m5904720[m HEAD@{20}: commit: filtro GPS y mensaje activados
+[33m507d9c7[m HEAD@{21}: commit: filtro saltos funcionando
+[33mdd8770f[m HEAD@{22}: commit: Backup antes de filtro GPS anti-saltos
+[33m89c781d[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{23}: checkout: moving from main to background-service
+[33m89c781d[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{24}: commit: Corregido sistema de streak y estabilidad de métricas diarias
+[33m07c5691[m HEAD@{25}: commit: Add dragon animations: breathing, bounce jump, glow effect and shadow system
+[33mfcf57c8[m HEAD@{26}: reset: moving to fcf57c8
+[33mfcf57c8[m HEAD@{27}: Branch: renamed refs/heads/main to refs/heads/main
+[33mfcf57c8[m HEAD@{29}: Branch: renamed refs/heads/main to refs/heads/main
+[33mfcf57c8[m HEAD@{31}: Branch: renamed refs/heads/master to refs/heads/main
+[33mfcf57c8[m HEAD@{33}: commit (initial): Backup inicial DrakoFit

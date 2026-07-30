@@ -1,10 +1,14 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.unit.dp
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,7 +24,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -76,7 +79,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
@@ -87,6 +89,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import android.content.Context
 import com.google.android.gms.ads.MobileAds
+import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.saveable.rememberSaveable
 
 private const val MIN_INTERVAL_MS = 800L
 
@@ -189,47 +195,145 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
 
-            var inActivity by remember { mutableStateOf(false) }
+            val storage = remember {
+                DragonStorage(this@MainActivity)
+            }
 
-                Log.d("DRAKOFIT", "inActivity = $inActivity")
-            val activityContext = this@MainActivity
+            var showBackgroundWarning by remember {
+                mutableStateOf(!storage.hasShownBackgroundWarning())
+            }
 
-            var lastActivityText by remember { mutableStateOf("") }
-            var lastXpText by remember { mutableStateOf("") }
-            var activityHighlightColor by remember { mutableStateOf(Color.White) }
 
-            if (inActivity) {
-
-                MapScreen(
-                    context = this,
-                    engine = engine,
-                    onFinish = { resultKm ->
-
-                        engine.registerActivity()
-
-                        val intent = Intent(this, TrackingService::class.java)
-                        stopService(intent)
-
-                        inActivity = false
-                    }
+            CompositionLocalProvider(
+                LocalDensity provides Density(
+                    density = LocalDensity.current.density,
+                    fontScale = 1f
                 )
+            ) {
 
-            } else {
 
-                HomeScreen(
-                    engine = engine,
-                    onStartActivity = {
-                        requestLocationPermission {
-                            inActivity = true
+                var inActivity by rememberSaveable { mutableStateOf(false) }
 
-                            val intent = Intent(activityContext, TrackingService::class.java)
-                            ContextCompat.startForegroundService(activityContext, intent)
+
+                val activityContext = this@MainActivity
+
+                var lastActivityText by remember { mutableStateOf("") }
+                var lastXpText by remember { mutableStateOf("") }
+                var activityHighlightColor by remember { mutableStateOf(Color.White) }
+
+
+                if (inActivity) {
+
+                    MapScreen(
+                        context = this,
+                        engine = engine,
+                        onFinish = { resultKm ->
+
+                            engine.registerActivity()
+
+                            val intent = Intent(this, TrackingService::class.java)
+                            stopService(intent)
+
+                            inActivity = false
                         }
-                    },
-                    lastActivityText = lastActivityText,
-                    lastXpText = lastXpText,
-                    activityHighlightColor = activityHighlightColor
-                )
+                    )
+
+                } else {
+
+                    HomeScreen(
+                        engine = engine,
+                        onStartActivity = {
+
+                            requestLocationPermission {
+
+                                inActivity = true
+
+                                val intent = Intent(activityContext, TrackingService::class.java)
+                                ContextCompat.startForegroundService(activityContext, intent)
+                            }
+                        },
+                        lastActivityText = lastActivityText,
+                        lastXpText = lastXpText,
+                        activityHighlightColor = activityHighlightColor
+                    )
+                }
+
+
+                // Aviso inicial de ejecución en segundo plano
+                if (showBackgroundWarning) {
+
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(
+                            density = LocalDensity.current.density,
+                            fontScale = 1f
+                        )
+                    ) {
+
+                        AlertDialog(
+
+                            onDismissRequest = {
+                                // Obligamos al usuario a pulsar "Entendido"
+                            },
+
+                            title = {
+                                Text(
+                                    "🐉 DrakoFit necesita ejecutarse en segundo plano"
+                                )
+                            },
+
+                            text = {
+
+                                Box(
+                                    modifier = Modifier
+                                        .heightIn(max = 350.dp)
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+
+                                    Text(
+                                        """
+                                        Para registrar tus rutas y pasos durante una actividad,
+                                        DrakoFit necesita seguir funcionando aunque apagues
+                                        la pantalla o cambies de aplicación.
+
+                                        Algunos dispositivos pueden cerrar aplicaciones por
+                                        ahorro de batería y detener el seguimiento GPS.
+
+                                        Para evitar perder una actividad:
+                                        
+                                        • Permite la ejecución en segundo plano.
+                                        
+                                        • Si tu móvil lo solicita, desactiva la optimización
+                                          de batería para DrakoFit.
+                                        
+                                        • Los pasos a seguir son:
+                                        
+                                        Ajustes - Aplicaciones -  Gestionar aplicaciones -
+                                        DrakoFit - Uso de batería -
+                                        Permitir ejecución en segundo plano.
+                                        """.trimIndent()
+                                    )
+                                }
+
+                            },
+
+                            confirmButton = {
+
+                                Button(
+                                    onClick = {
+
+                                        storage.setBackgroundWarningShown()
+                                        showBackgroundWarning = false
+
+                                    }
+                                ) {
+
+                                    Text("Entendido")
+
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }

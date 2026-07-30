@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import android.Manifest
 import android.content.Context
@@ -191,8 +191,6 @@ fun MapScreen(
                     xpEarned = sessionSteps / 100
 
                 )
-
-                routeHistoryStorage.saveRoute(route)
 
                 // 🎁 Solo las actividades completamente válidas generan recompensas
                 val validRoute = routeHistoryStorage.saveRoute(route)

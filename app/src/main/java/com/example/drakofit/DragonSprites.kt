@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix

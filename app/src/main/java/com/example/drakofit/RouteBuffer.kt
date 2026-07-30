@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import org.maplibre.android.geometry.LatLng
 

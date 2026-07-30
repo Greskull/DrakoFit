@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State

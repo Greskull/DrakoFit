@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 data class RouteHistoryEntry(
 
     val id: Long = System.currentTimeMillis(),

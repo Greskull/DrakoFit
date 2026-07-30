@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.drakofit"
+    namespace = "com.greskull.drakofit"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,11 +12,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.drakofit"
+        applicationId = "com.greskull.drakofit"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +41,7 @@ android {
 
 dependencies {
     implementation("org.maplibre.gl:android-sdk:11.5.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.6")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

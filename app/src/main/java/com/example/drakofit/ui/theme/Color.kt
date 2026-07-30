@@ -1,4 +1,4 @@
-package com.example.drakofit.ui.theme
+package com.greskull.drakofit.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

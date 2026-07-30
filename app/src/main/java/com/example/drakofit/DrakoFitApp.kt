@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import android.app.Application
 

@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import android.util.Log
+import android.os.Handler
+import android.os.Looper
 
 class TrackingService : Service() {
 
@@ -36,6 +38,17 @@ class TrackingService : Service() {
         startForeground(1, notification)
 
         return START_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+
+        }, 2000)
     }
 
     override fun onDestroy() {

@@ -1,4 +1,4 @@
-package com.example.drakofit
+package com.greskull.drakofit
 
 import android.content.Context
 import java.time.LocalDate
@@ -305,5 +305,15 @@ class DragonStorage(context: Context) {
             "skin_${type.name}",
             type == SkinType.NORMAL
         )
+    }
+
+    fun hasShownBackgroundWarning(): Boolean {
+        return prefs.getBoolean("background_warning_shown", false)
+    }
+
+    fun setBackgroundWarningShown() {
+        prefs.edit()
+            .putBoolean("background_warning_shown", true)
+            .apply()
     }
 }
