@@ -169,8 +169,7 @@ fun MapScreen(
 
         when (finishReason) {
 
-            FinishReason.NORMAL,
-            FinishReason.GPS_SUSPICIOUS -> {
+            FinishReason.NORMAL -> {
 
                 val km = calculateDistance(routePoints) / 1000f
 
@@ -195,10 +194,7 @@ fun MapScreen(
                 // 🎁 Solo las actividades completamente válidas generan recompensas
                 val validRoute = routeHistoryStorage.saveRoute(route)
 
-                if (
-                    finishReason == FinishReason.NORMAL &&
-                    validRoute
-                ) {
+                if (validRoute) {
 
                     engine.onValidActivityCompleted()
 
@@ -207,11 +203,24 @@ fun MapScreen(
                 delay(5000)
 
                 onFinish(distanceMeters)
-
             }
 
-            null -> return@LaunchedEffect
 
+            FinishReason.GPS_SUSPICIOUS -> {
+
+                // 🚫 Actividad anulada por GPS sospechoso:
+                // No guardar ruta
+                // No sumar pasos
+                // No dar XP
+                // No generar recompensas
+
+                delay(5000)
+
+                onFinish(distanceMeters)
+            }
+
+
+            null -> return@LaunchedEffect
         }
     }
 
@@ -282,7 +291,7 @@ fun MapScreen(
 
                     val distance = results[0]
 
-                    if (distance > 250f || loc.speed > 20f) {
+                    if (distance > 250f || loc.speed > 15f) {
 
                         invalidGpsStreak++
 

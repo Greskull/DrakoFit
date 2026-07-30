@@ -1630,7 +1630,7 @@ fun HomeScreen(
 
                         StatCard(
                             title = "Streak",
-                            value = "${state.streak} días 🔥"
+                            value = "${state.streak} días🔥"
                         )
 
                         if (state.streak > 0) {
@@ -1638,7 +1638,7 @@ fun HomeScreen(
                                 text = "BONUS\nEXP!",
                                 color = Color(0xFF4FC3F7),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
+                                fontSize = 10.sp,
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
                                     .padding(end = 12.dp)
@@ -1650,7 +1650,7 @@ fun HomeScreen(
 
                         StatCard(
                             title = "Felicidad",
-                            value = "${state.happiness} ❤️"
+                            value = "${state.happiness}❤️"
                         )
 
                         if (state.happiness == 7) {
@@ -1658,7 +1658,7 @@ fun HomeScreen(
                                 text = "BONUS\nREWARDS!",
                                 color = Color(0xFF4FC3F7),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
+                                fontSize = 10.sp,
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
                                     .padding(end = 12.dp)
