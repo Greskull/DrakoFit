@@ -885,6 +885,7 @@ fun HomeScreen(
                         .background(Color(0xFF222222))
                         .padding(24.dp)
                         .width(320.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
 
                     Text(
@@ -1638,7 +1639,7 @@ fun HomeScreen(
                                 text = "BONUS\nEXP!",
                                 color = Color(0xFF4FC3F7),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
                                     .padding(end = 12.dp)
@@ -1658,7 +1659,7 @@ fun HomeScreen(
                                 text = "BONUS\nREWARDS!",
                                 color = Color(0xFF4FC3F7),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
                                     .padding(end = 12.dp)
