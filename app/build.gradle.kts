@@ -6,17 +6,15 @@ plugins {
 android {
     namespace = "com.greskull.drakofit"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "com.greskull.drakofit"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.2.1"
+        versionCode = 10
+        versionName = "1.2.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,6 +38,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.play.services.maps)
     implementation("org.maplibre.gl:android-sdk:11.5.0")
     implementation("androidx.fragment:fragment-ktx:1.8.6")
     implementation("com.google.android.gms:play-services-location:21.3.0")

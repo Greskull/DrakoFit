@@ -120,8 +120,4 @@ class RouteHistoryStorage(context: Context) {
         return routes
     }
 
-    fun clearHistory() {
-
-        prefs.edit().clear().apply()
-    }
 }

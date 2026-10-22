@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,6 @@ import org.maplibre.geojson.Point
 import org.maplibre.geojson.LineString
 import kotlinx.coroutines.delay
 import org.maplibre.android.camera.CameraUpdateFactory
-import org.maplibre.android.annotations.Marker
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.*
@@ -39,25 +39,55 @@ enum class FinishReason {
     GPS_SUSPICIOUS
 }
 
+// 🔥 FIX (punto 7): filtro GPS basado en VELOCIDAD, no en distancia fija.
+// Velocidad máxima creíble entre A y el tick siguiente (B).
+private const val SPEED_THRESHOLD_MS = 15f          // 54 km/h
+// Velocidad de CONFIRMACIÓN entre A y C. 🔥 FIX: antes era el doble (30f =
+// 108 km/h) y eso dejaba el filtro prácticamente inútil: al ser una MEDIA
+// A→C, un coche a velocidad constante solo se detectaba por encima de
+// 108 km/h sostenidos, y entre 54 y 108 km/h no saltaba nunca (además
+// sumaba esa distancia como pasos). La protección contra un único fix
+// ruidoso ya la da el propio A→B→C (si B es un glitch, la media A→C sale
+// baja y se acepta) y el filtro de precisión, no hace falta un umbral doble.
+private const val SPEED_CONFIRM_THRESHOLD_MS = 15f  // 54 km/h
+// Si el propio GPS reporta un círculo de error peor que esto, el fix no es fiable.
+private const val MIN_ACCURACY_TO_TRUST = 25f
+// Periodo de gracia tras el primer fix GPS válido: durante estos segundos
+// no se evalúa el filtro de velocidad, para dar tiempo al chip GPS a
+// estabilizarse (crítico en gama baja, como el Redmi).
+private const val FILTER_GRACE_PERIOD_MS = 5000L // 5 segundos
+
+// 🔥 FIX (filtro al reanudar): distancia máxima razonable entre el punto
+// donde se pulsó "Pausar" y el primer fix tras pulsar "Reanudar". No es un
+// filtro de velocidad (el tiempo de pausa no es significativo: puede ser
+// un segundo o media hora), es un tope de distancia puro. 150m da margen
+// para moverse un poco durante la pausa sin ser tan laxo como para dejar
+// pasar un desplazamiento en coche/transporte.
+private const val MAX_RESUME_JUMP_METERS = 150f
+
 
 val mapRef = mutableStateOf<MapLibreMap?>(null)
-private var dragonMarker: Marker? = null
 
 @Composable
 fun MapScreen(
     context: Context,
     engine: DragonEngine,
-    onFinish: (Float) -> Unit
+    onFinish: (FinishReason) -> Unit
 ) {
 
-    var distanceMeters by remember { mutableStateOf(0f) }
-    var lastStepsComputed by remember { mutableStateOf(0) }
     var finishReason by remember { mutableStateOf<FinishReason?>(null) }
     val scale = remember { Animatable(0.6f) }
     val alpha = remember { Animatable(0f) }
     val rewardUnlocked = engine.wasRewardUnlocked()
     var lastValidPoint: Point? by remember { mutableStateOf(null) }
-    var invalidGpsStreak by remember { mutableStateOf(0) }
+    // 🔥 FIX: timestamp del punto A, necesario para calcular velocidad real
+    // (distancia / tiempo) en vez de una distancia fija por tick.
+    var lastValidTimeMs: Long? by remember { mutableStateOf(null) }
+    // Sigue tu lógica A→B→C:
+    // B (primer salto) solo levanta sospecha, no cuenta sesión.
+    // C se compara SIEMPRE contra A (el último punto válido), no contra B.
+    var firstSuspiciousTick by remember { mutableStateOf(false) }
+    var trackingStartTimeMs: Long? by remember { mutableStateOf(null) }
 
     val state by engine.state
 
@@ -72,12 +102,38 @@ fun MapScreen(
         mutableStateOf<SymbolLayer?>(null)
     }
 
-    var startTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    // 🔥 FIX (proceso muerto en segundo plano): startTime, isPaused,
+    // pausedAtMs y totalPausedMs pasan a rememberSaveable. Si Android mata
+    // el proceso mientras el móvil está bloqueado (típico en Realme/ColorOS
+    // incluso con los permisos de batería bien puestos) pero conserva la
+    // tarea, estos valores se restauran al volver — y como pasos, distancia,
+    // kcal y ritmo se CALCULAN a partir de esto + routePoints (no son
+    // contadores aparte), toda la sesión vuelve a ser correcta, no solo el
+    // dibujo del mapa.
+    var startTime by rememberSaveable { mutableStateOf(System.currentTimeMillis()) }
 
-    var isPaused by remember { mutableStateOf(false) }
+    var isPaused by rememberSaveable { mutableStateOf(false) }
 
-    var pausedAtMs by remember { mutableStateOf<Long?>(null) }
-    var totalPausedMs by remember { mutableStateOf(0L) }
+    // 🔥 FIX (filtro al reanudar): se activa al pulsar "Reanudar" y se
+    // desactiva sola en cuanto llega el primer fix GPS tras la pausa
+    // (pase o no el chequeo). Es "remember" normal, no rememberSaveable:
+    // si el proceso muriese justo en este instante tan concreto, al volver
+    // ya no estaría pausado desde la perspectiva del usuario, así que no
+    // hace falta que sobreviva.
+    var justResumed by remember { mutableStateOf(false) }
+
+    // pausedAtMs usa -1L como "no pausado" en vez de null: rememberSaveable
+    // no necesita un Saver aparte para tipos primitivos simples como Long,
+    // pero sí lo complica innecesariamente con nulls.
+    var pausedAtMs by rememberSaveable { mutableStateOf(-1L) }
+    var totalPausedMs by rememberSaveable { mutableStateOf(0L) }
+
+    // 🔥 FIX (sustituye al Saver de routePoints): un único Float, tamaño
+    // fijo pase lo que pase de larga que sea la sesión — cero riesgo de
+    // desbordar el Bundle. Se actualiza en cada punto GPS válido (ver el
+    // callback de ubicación más abajo) y es la fuente real de la distancia:
+    // pasos, kcal y ritmo se calculan a partir de ESTO, no de routePoints.
+    var accumulatedDistanceMeters by rememberSaveable { mutableStateOf(0f) }
 
     var tick by remember { mutableStateOf(0) }
 
@@ -90,6 +146,13 @@ fun MapScreen(
 
     var routeSourceRef by remember { mutableStateOf<GeoJsonSource?>(null) }
 
+    // 🔥 FIX: routePoints vuelve a remember normal — solo sirve para
+    // dibujar la línea en el mapa mientras la app está en primer plano.
+    // La distancia real ya no depende de esta lista (ver
+    // accumulatedDistanceMeters arriba), así que no hay ningún riesgo de
+    // Bundle si crece mucho: si el proceso muere, el dibujo se reinicia
+    // visualmente al volver, pero los datos (pasos/distancia/kcal/ritmo/
+    // tiempo) siguen siendo correctos.
     val routePoints = remember { mutableStateListOf<Point>() }
 
     var mapViewRef by remember {
@@ -117,7 +180,13 @@ fun MapScreen(
     }
 
     fun getElapsedTime(): Long {
-        val now = System.currentTimeMillis()
+        // 🔥 FIX: mientras está en pausa, "ahora" se congela en el instante
+        // exacto en que se pulsó pausar (pausedAtMs), en vez de seguir
+        // avanzando con el reloj real. Como el cronómetro (692) y el Ritmo
+        // (778) llaman a esta misma función, ambos quedan congelados de
+        // verdad — y de paso, si alguien finalizase la actividad estando
+        // en pausa, el dato guardado también sería el correcto, congelado.
+        val now = if (isPaused) pausedAtMs else System.currentTimeMillis()
         val base = now - startTime
         return base - totalPausedMs
     }
@@ -133,25 +202,6 @@ fun MapScreen(
 
     fun getSteps(km: Float): Int = (km * 1300).toInt()
 
-    fun calculateDistance(points: List<Point>): Float {
-        var total = 0f
-
-        for (i in 1 until points.size) {
-            val results = FloatArray(1)
-
-            android.location.Location.distanceBetween(
-                points[i - 1].latitude(),
-                points[i - 1].longitude(),
-                points[i].latitude(),
-                points[i].longitude(),
-                results
-            )
-
-            total += results[0]
-        }
-
-        return total
-    }
 
     fun getPace(km: Float, ms: Long): String {
         if (km < 0.01f) return "--:--"
@@ -171,7 +221,7 @@ fun MapScreen(
 
             FinishReason.NORMAL -> {
 
-                val km = calculateDistance(routePoints) / 1000f
+                val km = accumulatedDistanceMeters / 1000f
 
                 val sessionSteps = getSteps(km)
 
@@ -202,7 +252,7 @@ fun MapScreen(
 
                 delay(5000)
 
-                onFinish(distanceMeters)
+                onFinish(FinishReason.NORMAL)
             }
 
 
@@ -216,7 +266,7 @@ fun MapScreen(
 
                 delay(5000)
 
-                onFinish(distanceMeters)
+                onFinish(FinishReason.GPS_SUSPICIOUS)
             }
 
 
@@ -270,14 +320,85 @@ fun MapScreen(
 
                 val loc = result.lastLocation ?: return
 
+                // 🔥 FIX: un fix de mala precisión (típico al arrancar en
+                // gama baja, o en interiores) no se evalúa como movimiento.
+                // Se descarta en silencio, sin contar como sospechoso.
+                if (loc.hasAccuracy() && loc.accuracy > MIN_ACCURACY_TO_TRUST) {
+                    android.util.Log.d(
+                        "DRAKOFIT_GPS",
+                        "Fix descartado por baja precisión: accuracy=${loc.accuracy}m (límite=${MIN_ACCURACY_TO_TRUST}m)"
+                    )
+                    return
+                }
+
+                // Al primer fix que pasa el filtro de accuracy, arrancamos el cronómetro
+                // del periodo de gracia.
+                if (trackingStartTimeMs == null) {
+                    trackingStartTimeMs = loc.time
+                }
+
+                val withinGracePeriod =
+                    (loc.time - (trackingStartTimeMs ?: loc.time)) < FILTER_GRACE_PERIOD_MS
+
                 val newPoint =
                     Point.fromLngLat(
                         loc.longitude,
                         loc.latitude
                     )
                 val lastValid = lastValidPoint
+                val lastTime = lastValidTimeMs
 
-                if (lastValid != null) {
+                // 🔥 FIX (filtro al reanudar): chequeo de UN SOLO USO, solo
+                // para el primer fix tras pulsar "Reanudar". Es deliberadamente
+                // independiente del filtro de velocidad de más abajo: aquí
+                // comparamos solo DISTANCIA (no velocidad), porque el tiempo
+                // que ha estado en pausa no dice nada fiable — puede haber
+                // sido 1 segundo o 40 minutos, así que dividir por ese tiempo
+                // no tendría sentido. Se consume a sí mismo (justResumed pasa
+                // a false) tanto si pasa como si no, así que el resto de
+                // fixes de la sesión siguen su camino normal sin verse
+                // afectados por este bloque.
+                if (justResumed) {
+
+                    justResumed = false
+
+                    if (lastValid != null) {
+
+                        val resumeResults = FloatArray(1)
+
+                        android.location.Location.distanceBetween(
+                            lastValid.latitude(),
+                            lastValid.longitude(),
+                            newPoint.latitude(),
+                            newPoint.longitude(),
+                            resumeResults
+                        )
+
+                        val resumeJumpMeters = resumeResults[0]
+
+                        if (resumeJumpMeters > MAX_RESUME_JUMP_METERS) {
+
+                            android.util.Log.d(
+                                "DRAKOFIT_GPS",
+                                "GPS_SUSPICIOUS al reanudar: salto de ${"%.1f".format(resumeJumpMeters)}m " +
+                                    "desde el punto de pausa (límite=${MAX_RESUME_JUMP_METERS}m)"
+                            )
+
+                            finishReason = FinishReason.GPS_SUSPICIOUS
+                            return
+                        }
+                    }
+                }
+
+                // 🔥 FIX: distancia/tiempo respecto de A se calculan SIEMPRE
+                // que haya un punto anterior (incluso en periodo de gracia),
+                // porque ahora es la fuente real de accumulatedDistanceMeters.
+                // El filtro de velocidad (el 'if' de abajo) sigue evaluándose
+                // solo fuera del periodo de gracia, igual que antes.
+                var distanceFromA = 0f
+                var deltaSeconds = 0f
+
+                if (lastValid != null && lastTime != null) {
 
                     val results = FloatArray(1)
 
@@ -289,13 +410,48 @@ fun MapScreen(
                         results
                     )
 
-                    val distance = results[0]
+                    // 🔥 FIX: distancia SIEMPRE respecto de A (lastValidPoint),
+                    // nunca respecto del tick sospechoso anterior (B).
+                    distanceFromA = results[0]
+                    deltaSeconds = (loc.time - lastTime) / 1000f
+                }
 
-                    if (distance > 250f || loc.speed > 15f) {
+                if (!withinGracePeriod && lastValid != null && lastTime != null) {
 
-                        invalidGpsStreak++
+                    // Velocidad real A→(B o C). Al usar tiempo real en vez de
+                    // "5 segundos" fijos, no importa que el GPS llegue con
+                    // intervalos irregulares (muy típico en gama baja).
+                    val speedFromA =
+                        if (deltaSeconds > 0f) distanceFromA / deltaSeconds else 0f
 
-                        if (invalidGpsStreak >= 2) {
+                    // Sin sospecha activa: umbral base (54 km/h).
+                    // Con un B ya sospechoso: el umbral de confirmación en C
+                    // sube al doble (108 km/h) para evitar falsos positivos.
+                    val threshold =
+                        if (firstSuspiciousTick)
+                            SPEED_CONFIRM_THRESHOLD_MS
+                        else
+                            SPEED_THRESHOLD_MS
+
+                    if (speedFromA > threshold) {
+
+                        if (!firstSuspiciousTick) {
+                            // B: primera sospecha → se ignora, A sigue siendo A
+                            firstSuspiciousTick = true
+                            android.util.Log.d(
+                                "DRAKOFIT_GPS",
+                                "SOSPECHA (tick B): velocidad=${"%.1f".format(speedFromA * 3.6f)} km/h " +
+                                    "distancia=${"%.1f".format(distanceFromA)}m en ${"%.1f".format(deltaSeconds)}s " +
+                                    "(umbral=${SPEED_THRESHOLD_MS * 3.6f} km/h) — se ignora, esperando confirmación"
+                            )
+                        } else {
+                            // C: confirmado respecto de A → GPS falso o vehículo
+                            android.util.Log.d(
+                                "DRAKOFIT_GPS",
+                                "CONFIRMADO (tick C) -> GPS_SUSPICIOUS: velocidad=${"%.1f".format(speedFromA * 3.6f)} km/h " +
+                                    "distancia=${"%.1f".format(distanceFromA)}m en ${"%.1f".format(deltaSeconds)}s " +
+                                    "(umbral confirmación=${SPEED_CONFIRM_THRESHOLD_MS * 3.6f} km/h)"
+                            )
                             finishReason = FinishReason.GPS_SUSPICIOUS
                         }
 
@@ -325,8 +481,18 @@ fun MapScreen(
                     )
                 }
 
-                invalidGpsStreak = 0
+                // 🔥 FIX: punto válido → se limpia la sospecha y A pasa a ser
+                // este punto. Si veníamos de un tick B ignorado, aquí se traza
+                // la línea directa A→C, saltándose B automáticamente porque
+                // B nunca llegó a añadirse a routePoints.
+                firstSuspiciousTick = false
+                // 🔥 FIX: la distancia real y persistente se acumula aquí,
+                // no se recalcula de la lista completa en cada recomposición.
+                if (lastValid != null) {
+                    accumulatedDistanceMeters += distanceFromA
+                }
                 lastValidPoint = newPoint
+                lastValidTimeMs = loc.time
                 routePoints.add(newPoint)
 
                 if (routePoints.size > 1) {
@@ -544,7 +710,7 @@ fun MapScreen(
                     .align(Alignment.TopEnd)
                     .padding(
                         top = 12.dp,
-                        end = 12.dp
+                        end = 50.dp
                     )
 
             ) {
@@ -605,7 +771,7 @@ fun MapScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            val km = calculateDistance(routePoints) / 1000f
+            val km = accumulatedDistanceMeters / 1000f
             val sessionSteps = getSteps(km)
 
             Card(
@@ -683,8 +849,11 @@ fun MapScreen(
                         if (!isPaused) {
                             pausedAtMs = now
                         } else {
-                            totalPausedMs += (now - (pausedAtMs ?: now))
-                            pausedAtMs = null
+                            totalPausedMs += (now - (if (pausedAtMs >= 0L) pausedAtMs else now))
+                            pausedAtMs = -1L
+                            // 🔥 FIX (filtro al reanudar): se arma el chequeo
+                            // de distancia para el próximo fix GPS que llegue.
+                            justResumed = true
                         }
 
                         isPaused = !isPaused

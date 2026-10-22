@@ -16,7 +16,7 @@ data class DragonState(
 
     // Pasos del día (se resetean cada medianoche)
     val dailySteps: Int = 0,
-    // Distancia diaria (tambien se resetea)
+    // Distancia diaria (también se resetea)
     val dailyDistanceKm: Float = 0f,
 
     // Fecha del último día en que se hizo actividad

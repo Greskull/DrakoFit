@@ -90,9 +90,11 @@ class DragonEngine(context: Context) {
 
     }
 
-    private fun tryUnlockReward() {
-
+    fun clearRewardFlag() {
         rewardUnlocked = false
+    }
+
+    private fun tryUnlockReward() {
 
         val maxRoll = if (_state.value.happiness == 7) 95 else 100
 
@@ -155,6 +157,9 @@ class DragonEngine(context: Context) {
     }
     private fun checkGoldUnlock() {
 
+        // Si la dorada ya está desbloqueada, no volver a avisar
+        if (storage.isSkinUnlocked(SkinType.GOLD)) return
+
         val fireLevel =
             storage.loadDragonProgress(DragonType.FIRE).first
 
@@ -195,8 +200,6 @@ class DragonEngine(context: Context) {
 
     fun addSteps(steps: Int) {
 
-        val today = LocalDate.now().toString()
-
         updateState(
             _state.value.copy(
                 totalSteps = _state.value.totalSteps + steps,
@@ -212,8 +215,6 @@ class DragonEngine(context: Context) {
     // ---------------------------------------------------
 
     fun addDistance(km: Float) {
-
-        val today = LocalDate.now().toString()
 
         updateState(
             _state.value.copy(
@@ -247,15 +248,6 @@ class DragonEngine(context: Context) {
                 happiness = (_state.value.happiness + 1).coerceAtMost(7),
                 lastActivityDate = today,
                 activityRegisteredToday = true
-            )
-        )
-    }
-
-    fun missDay() {
-        updateState(
-            _state.value.copy(
-                streak = 0,
-                happiness = (_state.value.happiness - 1).coerceAtLeast(0)
             )
         )
     }
@@ -330,7 +322,14 @@ class DragonEngine(context: Context) {
 
         val isNewDay = safeLastActivity.toString() != today
 
-        val missedDay = safeLastActivity.isBefore(todayDate.minusDays(1))
+        // 🔥 FIX: días REALES sin actividad, no un booleano de "sí/no"
+        // daysMissed = 1 → hubo actividad ayer, es normal, no penaliza
+        // daysMissed = 2 → se saltó 1 día completo → -1 felicidad
+        // daysMissed = 7 → se saltó 6 días completos → -6 felicidad (con suelo en 1)
+        val daysMissed = java.time.temporal.ChronoUnit.DAYS.between(
+            safeLastActivity,
+            todayDate
+        )
 
         val resetDaily = if (isNewDay) {
             old.copy(
@@ -341,10 +340,11 @@ class DragonEngine(context: Context) {
             )
         } else old
 
-        return if (missedDay) {
+        return if (daysMissed >= 2) {
             resetDaily.copy(
                 streak = 0,
-                happiness = (old.happiness - 1).coerceAtLeast(0)
+                // 🔥 FIX: suelo en 1, nunca en 0 (mínimo real del dragón)
+                happiness = (old.happiness - (daysMissed - 1).toInt()).coerceAtLeast(1)
             )
         } else {
             resetDaily
@@ -386,11 +386,6 @@ class DragonEngine(context: Context) {
             )
         )
     }
-    fun unlockDragon(type: DragonType) {
-
-        storage.saveDragonUnlocked(type, true)
-
-    }
 
     fun isDragonUnlocked(type: DragonType): Boolean {
 
@@ -409,11 +404,6 @@ class DragonEngine(context: Context) {
         activeSkin = type
 
         storage.saveActiveSkin(type)
-    }
-
-    fun unlockSkin(type: SkinType) {
-
-        storage.saveSkinUnlocked(type, true)
     }
 
     fun isSkinUnlocked(type: SkinType): Boolean {

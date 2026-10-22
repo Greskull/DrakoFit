@@ -44,11 +44,6 @@ class DragonStorage(context: Context) {
 
     fun load(): DragonState {
 
-        val today = getToday()
-        val lastCheckDate = prefs.getString("lastCheckDate", "") ?: ""
-
-        val isNewDay = lastCheckDate != today
-
         val totalSteps = prefs.getInt("totalSteps", 0)
 
         return DragonState(
@@ -92,16 +87,6 @@ class DragonStorage(context: Context) {
     // COMPATIBILIDAD (opcional)
     // -------------------------
 
-    fun saveStatsOffset(value: Float) {
-
-        prefs.edit()
-            .putFloat("statsOffsetY", value)
-            .apply()
-    }
-
-    fun getLastCheckDate(): String {
-        return prefs.getString("lastCheckDate", "") ?: ""
-    }
     // ---------------------------------------------------
     // DRAGON SELECTION
     // ---------------------------------------------------
@@ -126,45 +111,6 @@ class DragonStorage(context: Context) {
     // RECOMPENSAS
     // ---------------------------------------------------
 
-    fun unlockAura() {
-        prefs.edit().putBoolean("reward_aura", true).apply()
-    }
-
-    fun hasAura(): Boolean {
-        return prefs.getBoolean("reward_aura", false)
-    }
-
-    fun unlockShiny() {
-        prefs.edit().putBoolean("reward_shiny", true).apply()
-    }
-
-    fun hasShiny(): Boolean {
-        return prefs.getBoolean("reward_shiny", false)
-    }
-
-    fun unlockGolden() {
-        prefs.edit().putBoolean("reward_golden", true).apply()
-    }
-
-    fun hasGolden(): Boolean {
-        return prefs.getBoolean("reward_golden", false)
-    }
-
-    fun unlockWaterDragon() {
-        prefs.edit().putBoolean("reward_water", true).apply()
-    }
-
-    fun hasWaterDragon(): Boolean {
-        return prefs.getBoolean("reward_water", false)
-    }
-
-    fun unlockPlantDragon() {
-        prefs.edit().putBoolean("reward_plant", true).apply()
-    }
-
-    fun hasPlantDragon(): Boolean {
-        return prefs.getBoolean("reward_plant", false)
-    }
     // ---------------------------------------------------
 // PROGRESO DE CADA DRAGÓN
 // ---------------------------------------------------
