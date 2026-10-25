@@ -1,0 +1,127 @@
+DrakoFit - árbol completo tras FASE 5 (endurecer para fabricantes y publicar)
+============================================================================
+
+Proyecto completo, abrible en Android Studio.
+Base: tu repo (45996d5) + Fases 1, 2, 3, 4 + arreglo del sprite + Fase 5.
+
+AUDITORÍA ANTES DE COMPRIMIR
+----------------------------
+  [1] .kt sueltos en app/src/main/java/            0
+  [2] Ruta de cada .kt == su línea "package"       37/37 OK
+  [3] Clases duplicadas                            ninguna
+  [4] Sintaxis de todo el árbol (kotlinc)          0 errores
+  [5] Tests                                        OK (59 tests)
+
+
+NOVEDADES DE LA FASE 5
+======================
+
+1) PANTALLA "PERMISOS Y BATERÍA"
+   app/src/main/java/com/greskull/drakofit/SystemHealth.kt         (NUEVO)
+   app/src/main/java/com/greskull/drakofit/SystemHealthScreen.kt   (NUEVO)
+   app/src/main/java/com/greskull/drakofit/MainActivity.kt         (menú + aviso)
+
+   Comprueba, EN VIVO, las cinco cosas que deciden si una sesión sobrevive:
+     - Ubicación precisa concedida
+     - Notificaciones concedidas
+     - Exclusión de optimización de batería (isIgnoringBatteryOptimizations)
+     - Arranque automático del fabricante (con atajo por OEM)
+     - Modo de ahorro de energía activo
+
+   Cada fila con su semáforo (verde/ámbar/rojo), explicación en lenguaje
+   normal y botón al ajuste correspondiente. Abajo, los pasos MANUALES
+   específicos del móvil detectado (ColorOS/realme, MIUI/Redmi, EMUI/Honor,
+   One UI, Funtouch y un texto genérico).
+
+   Se abre desde el menú (☰ -> Permisos y batería) y desde el botón del aviso
+   de primer arranque, que ahora se llama "Ver ajustes" y lleva directamente
+   ahí después de explicar el tema.
+
+   Cumple con la política de Google Play:
+     - NO se declara ni se usa REQUEST_IGNORE_BATTERY_OPTIMIZATIONS.
+     - Se LEE el estado (libre) y se ABRE la lista general de optimización
+       del sistema, que es donde el usuario elige.
+     - Los atajos de arranque automático son best-effort: si el fabricante no
+       expone la actividad, se abre la ficha de la app. Nunca lanza excepción.
+
+2) MEJORA DEL DETALLE SIN RECORRIDO
+   app/src/main/java/com/greskull/drakofit/RouteDetailScreen.kt
+
+   Las rutas antiguas ya no muestran una zona oscura vacía que parecía un
+   mapa que no carga: ahora hay un marcador de posición con el texto
+   "Esta ruta se guardó antes de que DrakoFit registrara el recorrido".
+
+3) PRUEBAS LARGAS AUTOMATIZADAS
+   herramientas/pruebas_fase5.ps1
+
+   Script de ADB con acciones:
+     info       datos del móvil y estado de los ajustes que importan
+     preparar   reinicia estadísticas de batería y limpia el log
+     iniciar    marca el inicio y guarda la batería
+     finalizar  calcula consumo en %/hora y genera el resumen
+     doze_on / doze_off    fuerza y quita Doze
+     kill       am kill para probar la recuperación
+     log        vuelca el log de DrakoFit a un archivo
+
+4) CHECKLIST DE PUBLICACIÓN
+   herramientas/GUIA_PLAY_CONSOLE.md
+
+   - Declaración del servicio en primer plano (tipo ubicación), con el texto
+     listo para pegar.
+   - Tabla de permisos con su justificación.
+   - Por qué NO se añade ACCESS_BACKGROUND_LOCATION (ahorra una revisión
+     extra de Play; el caso que deja fuera ya lo cubre la Fase 3).
+   - Data safety y política de privacidad.
+   - Publicación escalonada: qué excepciones vigilar en Android vitals
+     (ForegroundServiceDidNotStartInTime, StartNotAllowed, ANR) y umbrales
+     para parar el despliegue.
+   - Plantilla de notas de la versión.
+
+
+ARCHIVOS NUEVOS EN ESTA FASE
+   app/src/main/java/com/greskull/drakofit/SystemHealth.kt
+   app/src/main/java/com/greskull/drakofit/SystemHealthScreen.kt
+   herramientas/pruebas_fase5.ps1
+   herramientas/GUIA_PLAY_CONSOLE.md
+
+ARCHIVOS TOCADOS EN ESTA FASE (3)
+   MainActivity.kt        (+ item de menú, + overlay, aviso -> "Ver ajustes")
+   RouteDetailScreen.kt   (+ marcador cuando no hay recorrido)
+
+NO TOCADO: ninguna fórmula, umbral, filtro ni el motor del juego.
+
+
+DECISIÓN PENDIENTE (dime qué prefieres)
+=======================================
+ACCESS_BACKGROUND_LOCATION NO está añadido. Con el servicio en primer plano
+de tipo location no hace falta para el uso normal, y añadirlo obliga a pasar
+una revisión específica de Play con vídeo justificativo. El único caso que
+queda descubierto —el sistema reinicia el servicio sin sesión— ya lo cubre la
+recuperación de la Fase 3: se restaura en pausa y el usuario decide, así que
+no se pierde nada.
+
+Si aun así lo quieres (por ejemplo, si en las pruebas ves que algún fabricante
+mata el proceso y no lo recupera), el cambio es:
+
+  AndroidManifest.xml:
+      <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+  Y en SystemHealthScreen añadir una fila que abra
+  Settings.ACTION_APPLICATION_DETAILS_SETTINGS para que el usuario elija
+  "Permitir todo el tiempo" en Ubicación. En Android 11+ no se puede pedir
+  junto con ACCESS_FINE_LOCATION en el mismo diálogo.
+
+Dímelo y te lo preparo.
+
+
+CÓMO PROBAR ESTA FASE
+=====================
+1. Abre ☰ -> Permisos y batería. Debe detectar tu móvil (p. ej. "realme
+   (ColorOS)") y mostrar el semáforo de cada comprobación.
+2. Pulsa los botones: deben abrir los ajustes del sistema correspondientes.
+   Vuelve a la app, cierra y reabre la pantalla: el semáforo debe haber
+   cambiado si has tocado el ajuste.
+3. Abre una ruta antigua del historial: debe verse el texto de "ruta
+   anterior", no una zona vacía.
+4. Ejecuta el script de pruebas largas:
+      powershell -ExecutionPolicy Bypass -File herramientas\pruebas_fase5.ps1 -Accion ayuda

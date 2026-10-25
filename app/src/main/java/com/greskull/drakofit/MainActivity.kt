@@ -2,7 +2,6 @@ package com.greskull.drakofit
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -43,6 +42,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Eco
@@ -69,12 +69,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,6 +110,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import com.google.android.gms.ads.MobileAds
+import com.greskull.drakofit.tracking.SessionRecovery
+import com.greskull.drakofit.tracking.TrackingState
 import kotlinx.coroutines.delay
 
 fun formatDuration(seconds: Long): String {
@@ -180,7 +182,10 @@ class MainActivity : ComponentActivity() {
 
         org.maplibre.android.MapLibre.getInstance(this)
 
-        engine = DragonEngine(this)
+        // FASE 2: el motor es único y vive en la Application, porque
+        // TrackingService también tiene que poder guardar la sesión cuando
+        // esta Activity ya no existe (cierre desde el gestor de tareas).
+        engine = (application as DrakoFitApp).engine
         MobileAds.initialize(this)
 
         // 🔥 IMPORTANTE: solo después de crear engine
@@ -217,6 +222,13 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(!storage.hasShownBackgroundWarning())
             }
 
+            // 🔋 FASE 5: pantalla de estado del tracking / permisos.
+            // Vive aquí (y no en HomeScreen) porque también la abre el botón
+            // "Ver ajustes" del aviso de primer arranque, que está en este ámbito.
+            var showHealth by remember {
+                mutableStateOf(false)
+            }
+
 
             CompositionLocalProvider(
                 LocalDensity provides Density(
@@ -226,24 +238,34 @@ class MainActivity : ComponentActivity() {
             ) {
 
 
-                var inActivity by rememberSaveable { mutableStateOf(false) }
+                // =========================================================
+                // FASE 2: se acaba el `inActivity` guardado en el Bundle.
+                // La pantalla se decide por el estado REAL de la sesión: si
+                // TrackingService tiene una sesión en marcha (aunque la
+                // Activity haya muerto y vuelto), se muestra el mapa
+                // reconectado; si no, el inicio.
+                // =========================================================
+                val tracking by TrackingState.state.collectAsState()
 
+                val showTrackingScreen = tracking.isActive || tracking.isFinished
 
                 val activityContext = this@MainActivity
 
 
-                if (inActivity) {
+                if (showTrackingScreen) {
 
                     MapScreen(
                         context = this,
                         engine = engine,
                         onFinish = { reason ->
                             if (reason == FinishReason.NORMAL) {
+                                // registerActivity() es idempotente por día: el
+                                // servicio ya lo llamó al cerrar la sesión.
                                 engine.registerActivity()
                             }
-                            val intent = Intent(this, TrackingService::class.java)
-                            stopService(intent)
-                            inActivity = false
+                            // El servicio ya se ha parado solo (finishSession).
+                            // Aquí solo se limpia el estado para volver al inicio.
+                            TrackingState.resetToIdle()
                         }
                     )
 
@@ -251,16 +273,82 @@ class MainActivity : ComponentActivity() {
 
                     HomeScreen(
                         engine = engine,
+                        onOpenHealth = { showHealth = true },
                         onStartActivity = {
 
                             requestLocationPermission {
 
                                 engine.clearRewardFlag()   // ← NUEVA
 
-                                inActivity = true
+                                // FASE 2: el GPS ya no arranca aquí. Se le pide
+                                // al servicio, que es el dueño de la sesión.
+                                TrackingService.start(activityContext)
+                            }
+                        }
+                    )
+                }
 
-                                val intent = Intent(activityContext, TrackingService::class.java)
-                                ContextCompat.startForegroundService(activityContext, intent)
+
+                // =========================================================
+                // FASE 3: sesión interrumpida por muerte del proceso.
+                // Si quedó una actividad a medias en disco, se pregunta:
+                // Continuar (el servicio la retoma EN PAUSA) o Guardar y
+                // cerrar (pasa por el filtro de rutas largas de siempre).
+                // =========================================================
+                var pendingRecovery by remember {
+                    mutableStateOf<SessionRecovery.Recovered?>(null)
+                }
+
+                LaunchedEffect(Unit) {
+                    // Solo si no hay ya una sesión viva en el servicio
+                    if (!TrackingState.current().isActive) {
+                        pendingRecovery = SessionRecovery.peek(this@MainActivity)
+                    }
+                }
+
+                pendingRecovery?.let { rec ->
+
+                    AlertDialog(
+
+                        // Obligamos a elegir una de las dos opciones
+                        onDismissRequest = { },
+
+                        title = {
+                            Text("🐉 Actividad sin terminar")
+                        },
+
+                        text = {
+
+                            Text(
+                                "Tu última actividad se interrumpió.\n\n" +
+                                        "Distancia: %.2f km\n".format(rec.km) +
+                                        "Tiempo: ${rec.formattedTime}\n" +
+                                        "Pasos: ${rec.steps}\n\n" +
+                                        "¿Quieres continuarla o guardarla y cerrar?"
+                            )
+                        },
+
+                        confirmButton = {
+
+                            Button(
+                                onClick = {
+                                    SessionRecovery.continuesInService(activityContext)
+                                    pendingRecovery = null
+                                }
+                            ) {
+                                Text("Continuar")
+                            }
+                        },
+
+                        dismissButton = {
+
+                            Button(
+                                onClick = {
+                                    SessionRecovery.saveAndClose(activityContext, engine)
+                                    pendingRecovery = null
+                                }
+                            ) {
+                                Text("Guardar y cerrar")
                             }
                         }
                     )
@@ -332,15 +420,24 @@ class MainActivity : ComponentActivity() {
                                         storage.setBackgroundWarningShown()
                                         showBackgroundWarning = false
 
+                                        // 🔋 FASE 5: además de explicarlo, le
+                                        // llevamos a los ajustes que importan.
+                                        showHealth = true
+
                                     }
                                 ) {
 
-                                    Text("Entendido")
+                                    Text("Ver ajustes")
 
                                 }
                             }
                         )
                     }
+                }
+
+                // 🔋 FASE 5: se dibuja lo último para quedar por encima de todo.
+                if (showHealth) {
+                    SystemHealthScreen(onClose = { showHealth = false })
                 }
             }
         }
@@ -394,6 +491,7 @@ val shieldShape = object : Shape {
 @Composable
 fun HomeScreen(
     engine: DragonEngine,
+    onOpenHealth: () -> Unit,
     onStartActivity: () -> Unit
 ) {
 
@@ -423,6 +521,11 @@ fun HomeScreen(
     }
     var showHistory by remember {
         mutableStateOf(false)
+    }
+
+    // 🗺️ FASE 4: ruta abierta en la pantalla de detalle (null = ninguna)
+    var selectedRoute by remember {
+        mutableStateOf<RouteHistoryEntry?>(null)
     }
 
 
@@ -694,6 +797,40 @@ fun HomeScreen(
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    // 🔋 Permisos y batería (FASE 5)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onOpenHealth()
+                                showMenu = false
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(menuGold.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.BatteryAlert,
+                                contentDescription = null,
+                                tint = menuGold,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Permisos y batería",
+                            color = menuCream,
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 15.sp
+                        )
+                    }
 
                     // 📜 Historial
                     Row(
@@ -1017,6 +1154,9 @@ fun HomeScreen(
                                 .background(histCardBg, RoundedCornerShape(14.dp))
                                 .border(1.dp, histBorder, RoundedCornerShape(14.dp))
                                 .padding(16.dp)
+                                // 🗺️ FASE 4: la tarjeta abre el detalle con el
+                                // mapa interactivo encuadrado en la ruta.
+                                .clickable { selectedRoute = route }
                         ) {
 
                             Text(
@@ -1026,6 +1166,13 @@ fun HomeScreen(
                                 fontSize = 14.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // 🗺️ FASE 4: miniatura del recorrido (Canvas, sin red)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            RouteThumbnail(
+                                points = route.points,
+                                borderColor = histBorder
                             )
 
                             Spacer(modifier = Modifier.height(14.dp))
@@ -2023,6 +2170,18 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.3f))
+            )
+        }
+
+        // 🗺️ FASE 4: pantalla de detalle por encima de todo.
+        // Se dibuja al final para quedar por encima de los overlays
+        // (que usan zIndex 100f) y usa zIndex 200f.
+        selectedRoute?.let { ruta ->
+
+            RouteDetailScreen(
+                route = ruta,
+                isDarkMap = state.isMapDarkMode,
+                onClose = { selectedRoute = null }
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.greskull.drakofit
 
 import android.content.Context
+import com.greskull.drakofit.tracking.domain.RouteCodec
 
 class RouteHistoryStorage(context: Context) {
 
@@ -55,6 +56,13 @@ class RouteHistoryStorage(context: Context) {
             editor.putString("pace_$index", item.pace)
 
             editor.putInt("xp_$index", item.xpEarned)
+
+            // FASE 4: recorrido simplificado. Formato "lat,lon;lat,lon;..."
+            // (~20 caracteres por punto). Cadena vacía en rutas antiguas.
+            editor.putString(
+                "points_$index",
+                RouteCodec.encode(item.points)
+            )
         }
 
         editor.apply()
@@ -112,6 +120,13 @@ class RouteHistoryStorage(context: Context) {
                     xpEarned = prefs.getInt(
                         "xp_$i",
                         0
+                    ),
+
+                    // FASE 4: las rutas guardadas antes de esta fase no tienen
+                    // esta clave. decode(null) devuelve lista vacía, así que la
+                    // tarjeta se muestra sin mapa. Nada se rompe.
+                    points = RouteCodec.decode(
+                        prefs.getString("points_$i", null)
                     )
                 )
             )
